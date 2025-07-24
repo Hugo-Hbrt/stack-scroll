@@ -11,7 +11,7 @@ The goal is to build the frontend part of a reddit clone. All data is fetched fr
 
 # Features
 
-**TODO** : Add features, link to PRD document when built.
+Features can be found in the [Product Requirements Document (PRD)](./docs/product_requirements_document.md).
 
 # Installation 
 
