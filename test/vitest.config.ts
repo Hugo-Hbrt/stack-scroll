@@ -5,6 +5,10 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      coverage: {
+        enabled: true,
+        reporter: ['text', 'json', 'html'],
+      },
       passWithNoTests: true,
       environment: 'jsdom',
     },
