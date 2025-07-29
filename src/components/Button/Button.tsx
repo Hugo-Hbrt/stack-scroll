@@ -10,15 +10,11 @@ interface ButtonProps {
 }
 
 const Button = ({ children, onClick, btnStyle="primary", className=""}: ButtonProps) => {
-
-    const handleClick = () => {
-        onClick();
-    }
     
     return <button
         aria-label="button"
         className={twMerge(buttonStyles[btnStyle], className)}
-        onClick={handleClick}
+        onClick={onClick}
     >
         {children}
     </button>
