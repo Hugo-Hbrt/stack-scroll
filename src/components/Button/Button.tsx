@@ -1,5 +1,5 @@
 import type React from "react";
-import tw from "../../utils/tw.tsx";
+import tw from "@utils/tw.tsx";
 import { twMerge } from 'tailwind-merge'
 
 interface ButtonProps {
