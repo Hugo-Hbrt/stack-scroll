@@ -3,10 +3,19 @@ import type { UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path';
+import svgr from 'vite-plugin-svgr';
+
+const svgrOptions = {
+  svgrOptions: {
+    icon: true,
+    typescript: false, // Keep false to avoid build error
+  },
+  include: '**/*.svg',
+};
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), svgr(svgrOptions)],
   test: {
     enviroment: 'jsdom'
   },
