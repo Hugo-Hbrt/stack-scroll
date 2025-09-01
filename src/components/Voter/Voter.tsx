@@ -62,7 +62,7 @@ const Voter = ({ layout = voterLayout.Vertical, size = voterSize.Medium, voteCou
     const currentSize = sizeClasses[size];
 
     const containerClasses = twMerge(
-        `flex ${isVertical ? "flex-col" : "flex-row"} items-center flex-nowrap w-min m-1`,
+        `flex ${isVertical ? "flex-col" : "flex-row"} items-center flex-nowrap w-min`,
         className
     );
 
