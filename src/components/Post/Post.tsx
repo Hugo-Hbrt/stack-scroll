@@ -13,10 +13,12 @@ export interface PostProps {
     author: string;
     commentsCount: number;
     initialVoteCount: number;
+    onViewPost: () => void;
+    onViewComments: () => void;
     className?: string;
 }
 
-const Post = ({ tag, title, content, author, commentsCount, initialVoteCount, className }: PostProps) => {
+const Post = ({ tag, title, content, author, commentsCount, initialVoteCount, onViewPost, onViewComments, className }: PostProps) => {
 
     const screenSize = useScreenSize();
     const [voteState, voteCount, handleUpvote, handleDownvote] = useVoter(initialVoteCount, voterState.None);
@@ -26,11 +28,23 @@ const Post = ({ tag, title, content, author, commentsCount, initialVoteCount, cl
         downvoteCallback: handleDownvote,
     }
 
-    const ViewPostButton = ({className} : {className?: string}) => {
-        return (<Button className={twMerge("whitespace-nowrap font-family-sans text-text-50 font-normal text-[16px] bg-accent-base hover:bg-accent-700 rounded-[7px] px-2", className)}
-            onClick={() => console.log("View Post")}>
-                View Post
-                </Button>);
+    const ViewPostButton = () => {
+        return (<Button 
+            data-testid="view-post-btn" 
+            className={twMerge("whitespace-nowrap font-family-sans text-text-50 font-normal text-[16px] bg-accent-base hover:bg-accent-700 rounded-[7px] px-2")}
+            onClick={onViewPost}>
+            View Post
+        </Button>);
+    }
+
+    const CommentsButton = () => {
+        return (<Button
+            data-testid="view-comments-btn"
+            className="font-family-sans font-medium text-[16px] text-text-base"
+            onClick={onViewComments}>
+            <CommentsIcon className="inline mr-1" />
+            {commentsCount} comment{commentsCount > 1 ? "s" : ""}
+        </Button>);
     }
 
     if (screenSize === ScreenSize.Mobile) { /* Mobile Layout */
@@ -40,15 +54,12 @@ const Post = ({ tag, title, content, author, commentsCount, initialVoteCount, cl
                     <Voter className="self-center" voteCount={voteCount} callbacks={callbacks} size={voterSize.Large} state={voteState}></Voter>
                     <div className="flex flex-col gap-2.5 basis-[92%]">
                         <div className="flex flex-row gap-2.5 items-center">
-                            <Tag text={tag}></Tag>
+                            <Tag data-testid="post-tag" text={tag}></Tag>
                             <p className="font-family-sans font-medium text-[16px] text-text-base"> by {author}</p>
                         </div>
                         <p className="text-xl font-family-sans font-semibold text-text-50 max-w-4xs line-clamp-2">{title}</p>
                         <div className="flex flex-row gap-2.5 justify-between">
-                            <button className="font-family-sans font-medium text-[16px] text-text-base">
-                                <CommentsIcon className="inline mr-1"/>
-                                {commentsCount ? commentsCount : 0} comment{commentsCount > 1 ? "s" : ""} 
-                            </button>
+                            <CommentsButton />
                             <ViewPostButton />
                         </div>
                     </div>
@@ -60,15 +71,12 @@ const Post = ({ tag, title, content, author, commentsCount, initialVoteCount, cl
             <div className={twMerge("hidden md:block p-4 border-1 border-text-600 rounded-3xl max-w-[1034px] max-h-[220px]", className)}>
                 <div className="flex flex-row gap-2">
                     <div className="flex flex-col gap-2.5 basis-[92%] min-w-3xl max-w-4xl">
-                        <Tag text={tag}></Tag>
+                        <Tag data-testid="post-tag" text={tag}></Tag>
                         <p className="text-2xl font-family-sans font-semibold text-text-50 truncate">{title}</p>
                         <p className="font-family-sans font-light text-sm text-text-300 line-clamp-3">{content}</p>
                         <div className="flex gap-2.5">
                             <p className="font-family-sans font-medium text-[16px] text-text-base"> by {author}</p>
-                            <button className="font-family-sans font-medium text-[16px] text-text-base"> 
-                                <CommentsIcon className="inline mr-1"/>
-                                {commentsCount ? commentsCount : 0} comment{commentsCount > 1 ? "s" : ""} 
-                            </button>
+                            <CommentsButton />
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">
