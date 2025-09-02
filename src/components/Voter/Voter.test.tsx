@@ -3,6 +3,7 @@ import { cleanup, render, screen, fireEvent, renderHook, act } from '@testing-li
 import '@testing-library/jest-dom/vitest';
 import Voter, { voterState, useVoter, voterSize } from '@components/Voter/Voter';
 import { voterLayout, type voterCallbacks, type useVoterReturn, type VoterProps } from '@components/Voter/Voter';
+import { formatNumber } from '@utils/format/number_format';
 
 function getSvgByTestId(testId: string): SVGSVGElement {
     const element = screen.getByTestId(testId);
@@ -47,11 +48,10 @@ describe('Voter component', () => {
             cleanup();
         });
 
-        it('renders the value passed as prop', () => {
-
+        it('renders the value passed as prop formatted', () => {
             setup({ voteCount: dummyVoteCount });
-            const valueElement = screen.getByText(dummyVoteCount.toString());
-            expect(valueElement).toBeInTheDocument();
+            const valueElement = screen.getByTestId("vote-count");
+            expect(valueElement.textContent).toEqual(formatNumber(dummyVoteCount));
         });
 
         it('renders the upvote button', () => {
@@ -75,14 +75,14 @@ describe('Voter component', () => {
         it("renders correctly in vertical", () => {
             setup({ voteCount: dummyVoteCount, layout: voterLayout.Vertical });
 
-            expect(screen.getByText(dummyVoteCount.toString())).toBeInTheDocument();
+            expect(screen.getByTestId("vote-count")).toBeInTheDocument();
             expect(screen.getAllByRole("button")).toHaveLength(2);
         });
 
         it("renders correctly in horizontal", () => {
             setup({ voteCount: dummyVoteCount, layout: voterLayout.Horizontal });
 
-            expect(screen.getByText(dummyVoteCount.toString())).toBeInTheDocument();
+            expect(screen.getByTestId("vote-count")).toBeInTheDocument();
             expect(screen.getAllByRole("button")).toHaveLength(2);
         });
     });
@@ -92,23 +92,22 @@ describe('Voter component', () => {
             cleanup();
         });
 
-        const getTextAndIcons = () => {
-            const text = screen.getByText(dummyVoteCount.toString());
+        const getVoteCountAndIcons = () => {
+            const voteCount = screen.getByTestId("vote-count");
             const upvoteIcon = getSvgByTestId("button-upvote-icon");
             const downvoteIcon = getSvgByTestId("button-downvote-icon");
 
-            return [text, upvoteIcon, downvoteIcon];
+            return [voteCount, upvoteIcon, downvoteIcon];
         };
 
         it("renders correctly in small size", () => {
             setup({ voteCount: dummyVoteCount, size: voterSize.Small });
 
-            const [text, upvoteIcon, downvoteIcon] = getTextAndIcons();
+            const [voteCount, upvoteIcon, downvoteIcon] = getVoteCountAndIcons();
 
-            expect(screen.getByText(dummyVoteCount.toString())).toBeInTheDocument();
             expect(screen.getAllByRole("button")).toHaveLength(2);
 
-            expect(text.classList).toContain("text-xs")
+            expect(voteCount.classList).toContain("text-xs")
             expect(upvoteIcon.classList).toContain("w-4");
             expect(upvoteIcon.classList).toContain("h-4");
             expect(downvoteIcon.classList).toContain("w-4");
@@ -118,12 +117,11 @@ describe('Voter component', () => {
         it("renders correctly in medium size", () => {
             setup({ voteCount: dummyVoteCount, size: voterSize.Medium });
 
-            const [text, upvoteIcon, downvoteIcon] = getTextAndIcons();
+            const [voteCount, upvoteIcon, downvoteIcon] = getVoteCountAndIcons();
 
-            expect(screen.getByText(dummyVoteCount.toString())).toBeInTheDocument();
             expect(screen.getAllByRole("button")).toHaveLength(2);
 
-            expect(text.classList).toContain("text-sm")
+            expect(voteCount.classList).toContain("text-sm")
             expect(upvoteIcon.classList).toContain("w-5");
             expect(upvoteIcon.classList).toContain("h-5");
             expect(downvoteIcon.classList).toContain("w-5");
@@ -133,12 +131,11 @@ describe('Voter component', () => {
         it("renders correctly in large size", () => {
             setup({ voteCount: dummyVoteCount, size: voterSize.Large });
 
-            const [text, upvoteIcon, downvoteIcon] = getTextAndIcons();
+            const [voteCount, upvoteIcon, downvoteIcon] = getVoteCountAndIcons();
 
-            expect(screen.getByText(dummyVoteCount.toString())).toBeInTheDocument();
             expect(screen.getAllByRole("button")).toHaveLength(2);
 
-            expect(text.classList).toContain("text-base")
+            expect(voteCount.classList).toContain("text-base")
             expect(upvoteIcon.classList).toContain("w-6");
             expect(upvoteIcon.classList).toContain("h-6");
             expect(downvoteIcon.classList).toContain("w-6");
@@ -410,6 +407,34 @@ describe('useVoter hook', () => {
             });
             const [_state, count] = result.current;
             expect(count).toStrictEqual(baseValue + 1);
+        });
+    });
+
+    describe('when state is invalid', () => {
+        beforeEach(() => {
+            ({ result, unmount } = renderHook(() => useVoter(baseValue, -1 as unknown as voterState)));
+        });
+
+        afterEach(() => {
+            unmount();
+        });
+
+        it('upvoting should throw error', () => {
+            expect(() => {
+                act(() => {
+                    const [_0, _1, upvoteHandle] = result.current;
+                    upvoteHandle();
+                });
+            }).toThrowError(/Unhandled voter state/);
+        });
+
+        it('downvoting should throw error', () => {
+            expect(() => {
+                act(() => {
+                    const [_0, _1, _2, downvoteHandle] = result.current;
+                    downvoteHandle();
+                });
+            }).toThrowError(/Unhandled voter state/);
         });
     });
 });

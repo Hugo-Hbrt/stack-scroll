@@ -95,13 +95,13 @@ const Voter = ({ layout = voterLayout.Vertical, size = voterSize.Medium, voteCou
             {isVertical ? (
                 <>
                     {renderButton("upvote")}
-                    <p className={twMerge("text-center my-0.5", currentSize.text)}>{formattedVoteCount}</p>
+                    <p data-testid="vote-count" className={twMerge("text-center my-0.5", currentSize.text)}>{formattedVoteCount}</p>
                     {renderButton("downvote")}
                 </>
             ) : (
                 <>
                     {renderButton("downvote")}
-                    <p className={twMerge("text-center mx-0.5", currentSize.text)}>{formattedVoteCount}</p>
+                    <p data-testid="vote-count" className={twMerge("text-center mx-0.5", currentSize.text)}>{formattedVoteCount}</p>
                     {renderButton("upvote")}
                 </>
             )}
