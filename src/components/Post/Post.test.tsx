@@ -48,7 +48,6 @@ vi.mock("@assets/images/comments_icon.svg", () => ({
 
 import Post from "./Post";
 import type { PostProps } from "./Post";
-import { useVoter, voterState } from "@components/Voter/Voter";
 
 const defaultProps: PostProps = {
     tag: "React",

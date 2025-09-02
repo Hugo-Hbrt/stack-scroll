@@ -1,4 +1,3 @@
-import tw from "@utils/tw";
 import { twMerge } from "tailwind-merge";
 
 enum AvatarMode {
