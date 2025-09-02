@@ -3,7 +3,8 @@ import DownvoteIcon from "@assets/images/downvote_icon.svg";
 
 import tw from "@utils/tw";
 import { twMerge } from 'tailwind-merge'
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { formatNumber } from "@utils/format/number_format";
 
 // Types
 export type voterCallbacks = {
@@ -56,10 +57,15 @@ const sizeClasses = {
 const activeClass = tw("fill-accent-base stroke-accent-base")
 const inactiveClass = tw("fill-none stroke-text-base")
 
-const Voter = ({ layout = voterLayout.Vertical, size = voterSize.Medium, voteCount: value, callbacks, state, className }: VoterProps) => {
+const Voter = ({ layout = voterLayout.Vertical, size = voterSize.Medium, voteCount, callbacks, state, className }: VoterProps) => {
 
     const isVertical = layout === voterLayout.Vertical;
     const currentSize = sizeClasses[size];
+    const [formattedVoteCount, setFormattedVoteCount] = useState(formatNumber(voteCount));
+
+    useEffect(() => {
+        setFormattedVoteCount(formatNumber(voteCount));
+    }, [voteCount]);
 
     const containerClasses = twMerge(
         `flex ${isVertical ? "flex-col" : "flex-row"} items-center flex-nowrap w-min`,
@@ -89,13 +95,13 @@ const Voter = ({ layout = voterLayout.Vertical, size = voterSize.Medium, voteCou
             {isVertical ? (
                 <>
                     {renderButton("upvote")}
-                    <p className={twMerge("text-center my-0.5", currentSize.text)}>{value}</p>
+                    <p className={twMerge("text-center my-0.5", currentSize.text)}>{formattedVoteCount}</p>
                     {renderButton("downvote")}
                 </>
             ) : (
                 <>
                     {renderButton("downvote")}
-                    <p className={twMerge("text-center mx-0.5", currentSize.text)}>{value}</p>
+                    <p className={twMerge("text-center mx-0.5", currentSize.text)}>{formattedVoteCount}</p>
                     {renderButton("upvote")}
                 </>
             )}
@@ -111,6 +117,10 @@ export function useVoter(initialVoteCount: number, initialVoteState: voterState)
     const [state, setState] = useState(initialVoteState);
     const [voteCount, setVoteCount] = useState(initialVoteCount);
 
+    useEffect(() => {
+        setVoteCount(initialVoteCount);
+    }, [initialVoteCount])
+    
     const handleUpvote = () => {
 
         switch (state) {
