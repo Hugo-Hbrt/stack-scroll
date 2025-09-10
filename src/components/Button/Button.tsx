@@ -27,6 +27,6 @@ type buttonStyle = 'primary';
 
 
 export const buttonStyles: Record<buttonStyle, string> = {
-    primary: tw("bg-accent-base text-text-50 px-[10px] py-[5px] rounded-[7px] font-family-sans font-normal hover:bg-accent-700")
+    primary: tw("bg-accent-base text-text-50 px-[10px] py-[5px] rounded-[7px] font-family-sans font-normal hover:bg-accent-700 w-min")
 };
 
