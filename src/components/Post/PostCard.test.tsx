@@ -46,18 +46,23 @@ vi.mock("@assets/images/comments_icon.svg", () => ({
     default: () => <span data-testid="comments-icon" />,
 }));
 
-import Post from "./Post";
-import type { PostProps } from "./Post";
+import PostCard from "@components/Post/PostCard";
+import type { PostCardProps } from "@components/Post/PostCard";
+import { Post } from "@models/Post";
 
-const defaultProps: PostProps = {
+const defaultPost: Post = {
     tag: "React",
     title: "Test Title",
     content: "Test content for the post.",
     author: "John Doe",
     commentsCount: 5,
+    initialVoteCount: 10,
+}
+
+const defaultProps: PostCardProps = {
+    post: defaultPost,
     onViewPost: vi.fn(),
     onViewComments: vi.fn(),
-    initialVoteCount: 10,
 };
 
 import { useScreenSize, ScreenSize } from "@utils/hooks/useScreenSize";
@@ -69,9 +74,9 @@ describe("Post", () => {
     });
 
     const hasAllElements = () => {
-        expect(screen.getByTestId("post-tag")).toHaveTextContent(defaultProps.tag);
-        expect(screen.getByText(`by ${defaultProps.author}`)).toBeInTheDocument();
-        expect(screen.getByText(defaultProps.title)).toBeInTheDocument();
+        expect(screen.getByTestId("post-tag")).toHaveTextContent(defaultPost.tag);
+        expect(screen.getByText(`by u\\${defaultPost.author}`)).toBeInTheDocument();
+        expect(screen.getByText(defaultPost.title)).toBeInTheDocument();
         expect(screen.getByTestId("comments-icon")).toBeInTheDocument();
     	
         expect(screen.getByTestId("view-post-btn")).toBeInTheDocument();
@@ -82,21 +87,21 @@ describe("Post", () => {
 
     it("renders mobile layout when screen size is mobile", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
-        render(<Post {...defaultProps} />);
+        render(<PostCard {...defaultProps} />);
 
         hasAllElements();
     });
 
     it("renders desktop layout when screen size is desktop", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Desktop);
-        render(<Post {...defaultProps} />);
+        render(<PostCard {...defaultProps} />);
 
         hasAllElements();
     });
 
     it("calls upvote and downvote callbacks when voter buttons are clicked", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
-        render(<Post {...defaultProps} />);
+        render(<PostCard {...defaultProps} />);
         const upvoteBtn = screen.getByTestId("upvote");
         const downvoteBtn = screen.getByTestId("downvote");
         
@@ -109,16 +114,16 @@ describe("Post", () => {
 
     it("shows correct comment count and pluralization", () => {
     	vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Desktop);
-    	render(<Post {...defaultProps} commentsCount={1} />);
+    	render(<PostCard {...defaultProps} post={{ ...defaultPost, commentsCount: 1 }} />);
     	expect(screen.getByText("1 comment")).toBeInTheDocument();
-    	render(<Post {...defaultProps} commentsCount={2} />);
+    	render(<PostCard {...defaultProps} post={{ ...defaultPost, commentsCount: 2 }} />);
     	expect(screen.getByText("2 comments")).toBeInTheDocument();
     });
 
     it("calls the provided onViewPost handler when View Post button is clicked", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
     	const onViewPost = vi.fn();
-    	render(<Post {...defaultProps} onViewPost={onViewPost} />);
+    	render(<PostCard {...defaultProps} onViewPost={onViewPost} />);
     	fireEvent.click(screen.getByTestId("view-post-btn"));
     	expect(onViewPost).toHaveBeenCalled();
     });
@@ -127,7 +132,7 @@ describe("Post", () => {
     it("calls the provided onViewComments handler when View Comments button is clicked", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
     	const onViewComments = vi.fn();
-    	render(<Post {...defaultProps} onViewComments={onViewComments} />);
+    	render(<PostCard {...defaultProps} onViewComments={onViewComments} />);
     	fireEvent.click(screen.getByTestId("view-comments-btn"));
     	expect(onViewComments).toHaveBeenCalled();
     });
