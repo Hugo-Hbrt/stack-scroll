@@ -25,3 +25,6 @@ dist-ssr
 
 # Coverage
 coverage/
+
+# Daily log
+daily_log.md
