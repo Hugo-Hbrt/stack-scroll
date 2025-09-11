@@ -30,17 +30,13 @@ vi.mock("@components/Voter/Voter", async () => {
     return {
         ...actual,
         default: ({ voteCount, callbacks, size, state, className }: any) => (
-        <div data-testid="voter" data-votecount={voteCount} data-size={size} data-state={state} className={className}>
-            <button data-testid="upvote" onClick={callbacks.upvoteCallback}>Upvote</button>
-            <button data-testid="downvote" onClick={callbacks.downvoteCallback}>Downvote</button>
-        </div>),
+            <div data-testid="voter" data-votecount={voteCount} data-size={size} data-state={state} className={className}>
+                <button data-testid="upvote" onClick={callbacks.upvoteCallback}>Upvote</button>
+                <button data-testid="downvote" onClick={callbacks.downvoteCallback}>Downvote</button>
+            </div>),
         useVoter: (initialVoteCount: number, initialState: any) => [initialState, initialVoteCount, voterCallbacks.upvoteCallback, voterCallbacks.downvoteCallback],
     }
 });
-
-vi.mock("@components/Button/Button", () => ({
-    default: ({ children, ...props }: any) => <button data-testid="button" {...props}>{children}</button>,
-}));
 
 vi.mock("@assets/images/comments_icon.svg", () => ({
     default: () => <span data-testid="comments-icon" />,
@@ -51,6 +47,7 @@ import type { PostCardProps } from "@components/Post/PostCard";
 import { Post } from "@models/Post";
 
 const defaultPost: Post = {
+    id: 1,
     tag: "React",
     title: "Test Title",
     content: "Test content for the post.",
@@ -61,11 +58,14 @@ const defaultPost: Post = {
 
 const defaultProps: PostCardProps = {
     post: defaultPost,
-    onViewPost: vi.fn(),
-    onViewComments: vi.fn(),
 };
 
 import { useScreenSize, ScreenSize } from "@utils/hooks/useScreenSize";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
+interface RenderProps {
+    post?: Post;
+    className?: string;
+}
 
 describe("Post", () => {
     beforeEach(() => {
@@ -73,38 +73,60 @@ describe("Post", () => {
         cleanup();
     });
 
+    const renderComponent = (props?: RenderProps) => {
+        
+        // This component serves as a location spy to be able to test location.
+        function LocationSpy() {
+            const location = useLocation();
+            return (
+                <div data-testid="location">
+                    {location.pathname}
+                    {location.hash}
+                </div>
+            );
+        }
+
+        return render(
+            <MemoryRouter>
+                <Routes>
+                    <Route path="/" element={<PostCard  {...defaultProps} {...props} />} />
+                    <Route path="/post/:id" element={<LocationSpy />} />
+                </Routes>
+            </MemoryRouter>
+        );
+    }
+
     const hasAllElements = () => {
         expect(screen.getByTestId("post-tag")).toHaveTextContent(defaultPost.tag);
         expect(screen.getByText(`by u\\${defaultPost.author}`)).toBeInTheDocument();
         expect(screen.getByText(defaultPost.title)).toBeInTheDocument();
         expect(screen.getByTestId("comments-icon")).toBeInTheDocument();
-    	
+
         expect(screen.getByTestId("view-post-btn")).toBeInTheDocument();
-    	expect(screen.getByTestId("view-comments-btn")).toBeInTheDocument();
-                
+        expect(screen.getByTestId("view-comments-btn")).toBeInTheDocument();
+
         expect(screen.getByTestId("voter")).toBeInTheDocument();
     }
 
     it("renders mobile layout when screen size is mobile", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
-        render(<PostCard {...defaultProps} />);
-
+        renderComponent();
         hasAllElements();
     });
 
     it("renders desktop layout when screen size is desktop", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Desktop);
-        render(<PostCard {...defaultProps} />);
-
+        renderComponent();
         hasAllElements();
     });
 
     it("calls upvote and downvote callbacks when voter buttons are clicked", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
-        render(<PostCard {...defaultProps} />);
+        renderComponent();
+
         const upvoteBtn = screen.getByTestId("upvote");
         const downvoteBtn = screen.getByTestId("downvote");
-        
+
         fireEvent.click(upvoteBtn);
         expect(voterCallbacks.upvoteCallback).toHaveBeenCalled();
 
@@ -112,29 +134,28 @@ describe("Post", () => {
         expect(voterCallbacks.downvoteCallback).toHaveBeenCalled();
     });
 
-    it("shows correct comment count and pluralization", () => {
-    	vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Desktop);
-    	render(<PostCard {...defaultProps} post={{ ...defaultPost, commentsCount: 1 }} />);
-    	expect(screen.getByText("1 comment")).toBeInTheDocument();
-    	render(<PostCard {...defaultProps} post={{ ...defaultPost, commentsCount: 2 }} />);
-    	expect(screen.getByText("2 comments")).toBeInTheDocument();
-    });
+    for (let test of [
+        { commentsCount: 1, expectedText: "1 comment" },
+        { commentsCount: 2, expectedText: "2 comments" },
+    ]) {
+        it(`renders "${test.expectedText}" for comment count = ${test.commentsCount}`, () => {
+            vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Desktop);
+            renderComponent({ post: { ...defaultPost, commentsCount: test.commentsCount } });
+            expect(screen.getByText(test.expectedText)).toBeInTheDocument();
+        });
+    }
 
-    it("calls the provided onViewPost handler when View Post button is clicked", () => {
+    it("navigate to /post with correct post id when View Post button is clicked", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
-    	const onViewPost = vi.fn();
-    	render(<PostCard {...defaultProps} onViewPost={onViewPost} />);
-    	fireEvent.click(screen.getByTestId("view-post-btn"));
-    	expect(onViewPost).toHaveBeenCalled();
+        renderComponent();
+        fireEvent.click(screen.getByTestId("view-post-btn"));
+        expect(screen.getByTestId("location")).toHaveTextContent(`/post/${defaultPost.id}`);
     });
 
-    // test viewComments callback
-    it("calls the provided onViewComments handler when View Comments button is clicked", () => {
+    it("navigate to /post when comment button is clicked with comments as hash", () => {
         vi.mocked(useScreenSize).mockReturnValue(ScreenSize.Mobile);
-    	const onViewComments = vi.fn();
-    	render(<PostCard {...defaultProps} onViewComments={onViewComments} />);
-    	fireEvent.click(screen.getByTestId("view-comments-btn"));
-    	expect(onViewComments).toHaveBeenCalled();
+        renderComponent();
+        fireEvent.click(screen.getByTestId("view-comments-btn"));
+        expect(screen.getByTestId("location")).toHaveTextContent(`/post/${defaultPost.id}#comments`);
     });
-
 });
