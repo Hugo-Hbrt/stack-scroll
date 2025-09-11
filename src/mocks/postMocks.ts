@@ -2,6 +2,7 @@ import { PostFactory } from "@models/Post";
 
 const postData = [
     {
+        id: 1,
         authorUsername: "tech_guru",
         title: "AI in Everyday Life",
         subjectTag: "Technology",
@@ -24,6 +25,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
         numberOfComments: 45
     },
     {
+        id: 2,
         authorUsername: "wanderlust_jane",
         title: "Backpacking Through Europe",
         subjectTag: "Travel",
@@ -32,6 +34,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
         numberOfComments: 30
     },
     {
+        id: 3,
         authorUsername: "foodie_king",
         title: "Top 10 Street Foods",
         subjectTag: "Food",
@@ -40,6 +43,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
         numberOfComments: 60
     },
     {
+        id: 4,
         authorUsername: "fitlife_coach",
         title: "Morning Workout Routine",
         subjectTag: "Fitness",
@@ -48,6 +52,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
         numberOfComments: 20
     },
     {
+        id: 5,
         authorUsername: "bookworm123",
         title: "Best Fantasy Novels of 2025",
         subjectTag: "Books",
@@ -56,6 +61,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
         numberOfComments: 35
     },
     {
+        id: 6,
         authorUsername: "cinema_buff",
         title: "The Rise of Indie Films",
         subjectTag: "Movies",
@@ -65,5 +71,5 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
     }
 ];
 
-const posts = postData.map(post => PostFactory.createPost(post.subjectTag, post.title, post.content, post.authorUsername, post.numberOfComments, post.numberOfVotes));
+const posts = postData.map(post => PostFactory.createPost(post.id, post.subjectTag, post.title, post.content, post.authorUsername, post.numberOfComments, post.numberOfVotes ));
 export default posts;

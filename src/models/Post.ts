@@ -1,4 +1,5 @@
 export class Post {
+    id: number;
     tag: string;
     title: string;
     content: string;
@@ -12,8 +13,10 @@ export class Post {
         content: string,
         author: string,
         commentsCount: number,
-        initialVoteCount: number
+        initialVoteCount: number,
+        id: number
     ) {
+        this.id = id;
         this.tag = tag;
         this.title = title;
         this.content = content;
@@ -25,6 +28,7 @@ export class Post {
 
 export class PostFactory {
     static createPost(
+        id: number,
         tag: string,
         title: string,
         content: string,
@@ -32,6 +36,6 @@ export class PostFactory {
         commentsCount: number,
         initialVoteCount: number
     ): Post {
-        return new Post(tag, title, content, author, commentsCount, initialVoteCount);
+        return new Post(tag, title, content, author, commentsCount, initialVoteCount, id);
     }
 }
