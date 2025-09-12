@@ -1,6 +1,6 @@
 import Tag from "@components/Tag/Tag";
 import Voter, { useVoter, voterState } from "@components/Voter/Voter";
-import { Post } from "@models/Post";
+import type { Post } from "@models/Post";
 import Button from "@components/Button/Button";
 import CommentsIcon from "@assets/images/comments_icon.svg";
 import { twMerge } from "tailwind-merge";
