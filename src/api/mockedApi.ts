@@ -4,7 +4,7 @@ import postMocks from '../mocks/postMocks';
 import commentMocks from '../mocks/commentMocks';
 
 // Simulate network delay
-const delay = (ms: number = 300): Promise<void> => 
+const delay = (ms: number = 1500): Promise<void> => 
     new Promise(resolve => setTimeout(resolve, ms));
 
 export interface ApiResponse<T> {

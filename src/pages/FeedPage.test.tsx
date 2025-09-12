@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import FeedPage from './FeedPage';
@@ -311,6 +311,61 @@ describe('FeedPage Retry Behavior', () => {
       const totalCalls = dispatchSpy.mock.calls.length;
       // Should have made 2 more calls for Travel (retry count was reset, 1 initial + 1 success)
       expect(totalCalls).toBe(callsAfterTechnology + 2);
+    });
+  });
+
+  describe('Loading Spinner Tests', () => {
+    describe('Test 1: Should show spinner when loading is true', () => {
+      it('should display spinning AppLogo when loading state is true', () => {
+        const postsState = createPostsState([], 'Technology', true);
+        renderFeedPageWithStore(postsState);
+
+        const loadingSpinners = screen.getAllByTestId('loading-spinner');
+        expect(loadingSpinners.length).toBeGreaterThan(0);
+        
+        const spinner = loadingSpinners[0];
+        const spinningLogo = spinner.querySelector('.animate-spin');
+        
+        expect(spinner).toBeTruthy();
+        expect(spinningLogo).toBeTruthy();
+      });
+    });
+
+    describe('Test 2: Should hide spinner when loading is false', () => {
+      it('should not display spinner when loading state is false', () => {
+        // Create state with posts so fetch doesn't trigger and set loading to true
+        const mockPosts = [createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
+        const postsState = createPostsState(mockPosts, 'Technology', false);
+        const { container } = renderFeedPageWithStore(postsState);
+
+        // Should not show spinner when not loading
+        const loadingSpinner = container.querySelector('[data-testid="loading-spinner"]');
+        expect(loadingSpinner).toBeFalsy();
+      });
+    });
+
+    describe('Test 3: Should show spinner with correct props/styling', () => {
+      it('should render AppLogo with medium size and proper container styling', () => {
+        const postsState = createPostsState([], 'Technology', true);
+        const { container } = renderFeedPageWithStore(postsState);
+
+        const loadingSpinner = container.querySelector('[data-testid="loading-spinner"]');
+        expect(loadingSpinner).toBeTruthy();
+
+        // Check container has proper centering classes
+        expect(loadingSpinner?.classList.contains('flex')).toBe(true);
+        expect(loadingSpinner?.classList.contains('justify-center')).toBe(true);
+        expect(loadingSpinner?.classList.contains('my-4')).toBe(true);
+
+        // Check AppLogo has animate-spin class  
+        const appLogo = loadingSpinner?.querySelector('.animate-spin');
+        expect(appLogo).toBeTruthy();
+
+        // Check SVG has medium size (32x32)
+        const svg = appLogo?.querySelector('svg');
+        expect(svg?.getAttribute('width')).toBe('32');
+        expect(svg?.getAttribute('height')).toBe('32');
+      });
     });
   });
 });

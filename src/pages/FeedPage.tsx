@@ -1,73 +1,96 @@
+import { useEffect, useMemo, useRef, useCallback } from "react";
 import type { Post } from "@models/Post";
 import PostCard from "@components/Post/PostCard";
-import TagSelector, { tagSelectorState } from "@components/TagSelector/TagSelector.tsx";
+import TagSelector from "@components/TagSelector/TagSelector";
+import AppLogo, { AppLogoSize } from "@components/AppLogo/AppLogo";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { fetchPostsByTag, setSelectedTag } from "../store/postsSlice";
-import { useEffect, useRef } from "react";
 
-// const TAGS = ["All", "r/programming", "r/reactjs", "r/javascript", "r/frontend"];
 const MIN_NUMBER_OF_SHOWN_POSTS = 1;
-const MAX_NUMBER_OF_SHOWN_POSTS = 4;
+const MAX_NUMBER_OF_SHOWN_POSTS = 10;
+const MAX_NUMBER_OF_RETRY = 2;
 
-const TAGS = ["All", "Technology", "Travel", "Food", "Fitness", "Books"];
+const TAGS = ["All", "Technology", "Travel", "Food", "Fitness", "Books"] as string[];
 
 const FeedPage = () => {
   const dispatch = useAppDispatch();
-  const { posts: allPosts, selectedTag, loading } = useAppSelector((state) => state.posts);
-  const retryCountRef = useRef<number>(0);
-    
-  const feedPosts = selectedTag === "All"
-    ? allPosts
-    : allPosts.filter((post: Post) => post.tag === selectedTag);
+  const { posts: allPosts, selectedTag, loading, error } = useAppSelector((s) => s.posts);
 
-  const handleTagSelection = (tag: string) => {
-    dispatch(setSelectedTag(tag));
-  };
+  const retryCountRef = useRef(0);
 
-  const computeTagSelectorState = (tag: string) => {
-    return tag === selectedTag ? tagSelectorState.SELECTED : tagSelectorState.UNSELECTED;
-  }
+  const feedPosts = useMemo<Post[]>(() => {
+    return selectedTag === "All"
+      ? allPosts
+      : allPosts.filter((p: Post) => p.tag === selectedTag);
+  }, [allPosts, selectedTag]);
+
+  const handleTagSelection = useCallback((tag: string) => {
+    if (tag !== selectedTag) dispatch(setSelectedTag(tag));
+  }, [dispatch, selectedTag]);
 
   // Reset retry count when tag changes
   useEffect(() => {
     retryCountRef.current = 0;
   }, [selectedTag]);
 
-  // Fetch posts with retry logic
+  // Fetch posts (threshold-based retry)
   useEffect(() => {
-    const currentRetryCount = retryCountRef.current;
-    const needsMorePosts = feedPosts.length < MIN_NUMBER_OF_SHOWN_POSTS;
-    const canMakeRequest = !loading && currentRetryCount < 2; // Allow initial + 1 retry
-
-    if (needsMorePosts && canMakeRequest) {
-      retryCountRef.current = currentRetryCount + 1;
+    const needsMore = feedPosts.length < MIN_NUMBER_OF_SHOWN_POSTS;
+    const canRetry = retryCountRef.current < MAX_NUMBER_OF_RETRY;
+    if (!loading && needsMore && canRetry) {
+      retryCountRef.current += 1;
       dispatch(fetchPostsByTag(selectedTag));
     }
-  }, [feedPosts.length, selectedTag, loading, dispatch]);
+  }, [dispatch, selectedTag, feedPosts.length, loading]);
 
+  const visible = useMemo(
+    () => feedPosts.slice(0, MAX_NUMBER_OF_SHOWN_POSTS),
+    [feedPosts]
+  );
 
   return (
     <div className="flex flex-col">
-      <div>
+      <div className="flex flex-col gap-4 items-center">
+        <ul className="flex flex-row gap-4 flex-wrap justify-center" aria-label="Tag filters">
+          {TAGS.map((tag) => (
+            <li key={tag}>
+              <TagSelector
+                text={tag}
+                selected={tag === selectedTag}
+                onClick={() => handleTagSelection(tag)}
+              />
+            </li>
+          ))}
+        </ul>
 
-        <div className="flex flex-col gap-4 items-center">
-          <ul className="flex flex-row gap-4 flex-wrap justify-center">
-            {TAGS.map((tag) => (
-              <li key={tag} id={tag}>
-                <TagSelector state={computeTagSelectorState(tag)} text={tag} onClick={() => handleTagSelection(tag)} />
-              </li>
-            ))}
-          </ul>
-          {feedPosts.slice(0, MAX_NUMBER_OF_SHOWN_POSTS).map((post) =>
-            <PostCard
-              key={post.title}
-              post={post}
-              className="w-full max-w-5xl" />
-          )}
-        </div>
+        {loading && (
+          <div
+            data-testid="loading-spinner"
+            className="flex justify-center my-4"
+            role="status"
+            aria-live="polite"
+            aria-label="Loading posts"
+          >
+            <AppLogo size={AppLogoSize.Medium} className="animate-spin" />
+          </div>
+        )}
+
+        {!loading && error && (
+          <div role="alert" className="text-red-600">
+            {error}
+          </div>
+        )}
+
+        {!loading && visible.length === 0 && !error && (
+          <p className="text-muted-foreground">No posts for “{selectedTag}”.</p>
+        )}
+
+        {visible.map((post) => (
+          <PostCard key={post.id} post={post} className="w-full max-w-5xl" />
+        ))}
       </div>
     </div>
   );
-}
+};
 
 export default FeedPage;
