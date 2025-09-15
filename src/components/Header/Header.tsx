@@ -2,6 +2,7 @@ import AppLogo, { AppLogoSize } from "@components/AppLogo/AppLogo";
 import { ScreenSize, useScreenSize } from "@utils/hooks/useScreenSize";
 import { Link } from "react-router";
 import { twMerge } from "tailwind-merge";
+import ROUTES from "@config/routes.ts"
 
 const Header = () => {
     const screenSize = useScreenSize();
@@ -11,7 +12,7 @@ const Header = () => {
 
     return (
         <header className={twMerge("w-full bg-background-base flex items-center text-2xl font-bold", alignment)}>
-            <Link to="/feed">
+            <Link to={ROUTES.HOME}>
                 <AppLogo className={"mt-[10px] md:ml-[40px] md:mt-[40px]"} showText={showText} size={logoSize}/>
             </Link>
         </header>

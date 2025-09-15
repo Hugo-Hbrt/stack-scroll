@@ -7,8 +7,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Root />}>
-        <Route path="/feed" element={<FeedPage/>} />
-        <Route path="/post/:postId" element={<PostPage />}/>
+        <Route index element={<FeedPage/>} />
+        <Route path="post/:postId" element={<PostPage />}/>
       </Route>
     </Routes>
   );
