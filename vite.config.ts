@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { defineConfig } from 'vite'
 import type { UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -13,11 +14,22 @@ const svgrOptions = {
   include: '**/*.svg',
 };
 
+// Read URL from .env file
+const url = process.env.VITE_BASE_URL;
+console.log('Vite server started at:', url);
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), svgr(svgrOptions)],
+  server: {
+    port: 5173, // Ensure Vite runs on port 5173
+    open: url, // Open the Ngrok URL in the browser
+    allowedHosts: [
+      url?.replace(/https?:\/\//, ''), // Remove protocol for allowedHosts
+    ],
+  },
   test: {
-    enviroment: 'jsdom'
+    environment: 'jsdom'
   },
   resolve: {
     alias: {
@@ -26,6 +38,7 @@ export default defineConfig({
       "@utils": path.resolve(__dirname, 'src/utils'),
       "@pages": path.resolve(__dirname, 'src/pages'),
       "@models": path.resolve(__dirname, 'src/models'),
+      "@config": path.resolve(__dirname, 'src/config')
     }
   }
 } as UserConfig)
