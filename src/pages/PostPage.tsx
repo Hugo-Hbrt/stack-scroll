@@ -3,12 +3,12 @@ import CommentForm from "@components/Comments/CommentForm";
 import Comment from "@components/Comments/Comment";
 import PostSection from "@components/Post/PostSection";
 import LoadingPostSection from "@components/Post/LoadingPostSection";
-import AppLogo, { AppLogoSize } from "@components/AppLogo/AppLogo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { fetchCommentsByPostId } from "../store/commentsSlice";
 import { fetchPostById } from "../store/postsSlice";
+import LoadingSpinner from "@components/LoadingSpinner/LoadingSpinner";
 
 const PostPage = () => {
     const { postId } = useParams<{ postId: string }>();
@@ -71,17 +71,7 @@ const PostPage = () => {
 
             {post && <CommentSection refProps={commentsRef} className="p-4" commentsCount={comments.length}>
                 <CommentForm onSubmit={(comment) => alert(`Comment submitted: ${comment}`)} />
-                {commentsLoading && (
-                    <div
-                        data-testid="comments-loading-spinner"
-                        className="flex justify-center my-4"
-                        role="status"
-                        aria-live="polite"
-                        aria-label="Loading comments"
-                    >
-                        <AppLogo size={AppLogoSize.Medium} className="animate-spin" />
-                    </div>
-                )}
+                {commentsLoading && <LoadingSpinner />}
                 {comments.map((comment) => (
                     <Comment key={comment.id} {...comment} />
                 ))}

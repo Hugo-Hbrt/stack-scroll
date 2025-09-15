@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useCallback } from "react";
 import type { Post } from "@models/Post";
 import PostCard from "@components/Post/PostCard";
 import TagSelector from "@components/TagSelector/TagSelector";
-import AppLogo, { AppLogoSize } from "@components/AppLogo/AppLogo";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { fetchPostsByTag, setSelectedTag } from "../store/postsSlice";
+import LoadingSpinner from "@components/LoadingSpinner/LoadingSpinner";
 
 const MIN_NUMBER_OF_SHOWN_POSTS = 1;
 const MAX_NUMBER_OF_SHOWN_POSTS = 10;
@@ -63,17 +63,7 @@ const FeedPage = () => {
           ))}
         </ul>
 
-        {loading && (
-          <div
-            data-testid="loading-spinner"
-            className="flex justify-center my-4"
-            role="status"
-            aria-live="polite"
-            aria-label="Loading posts"
-          >
-            <AppLogo size={AppLogoSize.Medium} className="animate-spin" />
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
 
         {!loading && error && (
           <div role="alert" className="text-red-600">
