@@ -44,7 +44,7 @@ vi.mock("@assets/images/comments_icon.svg", () => ({
 
 import PostCard from "@components/Post/PostCard";
 import type { PostCardProps } from "@components/Post/PostCard";
-import { Post } from "@models/Post";
+import type { Post } from "@models/Post";
 
 const defaultPost: Post = {
     id: 1,
