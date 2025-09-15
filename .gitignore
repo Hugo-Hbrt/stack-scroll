@@ -28,3 +28,6 @@ coverage/
 
 # Daily log
 daily_log.md
+
+# Env file
+.env
