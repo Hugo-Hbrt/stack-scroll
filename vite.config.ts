@@ -40,6 +40,7 @@ export default defineConfig({
       "@models": path.resolve(__dirname, 'src/models'),
       "@config": path.resolve(__dirname, 'src/config'),
       "@store": path.resolve(__dirname, 'src/store'),
+      "@api": path.resolve(__dirname, 'src/api'),
     }
   }
 } as UserConfig)
