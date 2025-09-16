@@ -3,16 +3,24 @@ import { ScreenSize, useScreenSize } from "@utils/hooks/useScreenSize";
 import { Link } from "react-router";
 import { twMerge } from "tailwind-merge";
 import ROUTES from "@config/routes.ts"
+import { useAppSelector } from "@store/hooks";
+import { useMemo } from "react";
 
 const Header = () => {
+    const { isAuthenticated } = useAppSelector((s) => s.auth);
+    
     const screenSize = useScreenSize();
     const showText = screenSize !== ScreenSize.Mobile;
     const alignment = screenSize === ScreenSize.Desktop ? "justify-start" : "justify-center";
     const logoSize = screenSize === ScreenSize.Desktop ? AppLogoSize.Large : AppLogoSize.Medium;
 
+    const route = useMemo<string>(() => {
+        return isAuthenticated ? ROUTES.FEED : ROUTES.HOME;
+    }, [isAuthenticated])
+    
     return (
         <header className={twMerge("w-full bg-background-base flex items-center text-2xl font-bold", alignment)}>
-            <Link to={ROUTES.HOME}>
+            <Link to={route}>
                 <AppLogo className={"mt-[10px] md:ml-[40px] md:mt-[40px]"} showText={showText} size={logoSize}/>
             </Link>
         </header>
