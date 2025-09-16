@@ -2,8 +2,12 @@
 import { Outlet } from "react-router";
 import Header from "@components/Header/Header";
 import Footer from "@components/Footer/Footer";
+import useLoginManager from "@utils/hooks/useLoginManager";
 
 const Root = () => {
+    // Use Login Manager once at the project root.
+    useLoginManager();
+
     return (
         <div>
             <Header />
