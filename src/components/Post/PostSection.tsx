@@ -38,7 +38,7 @@ const PostSection = ({ post, className, scrollCallback }: PostSectionProps) => {
             <div className="flex flex-row justify-between">
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-row min-w-0 gap-4 flex-wrap md:flex-nowrap max-w-min justify-between">
-                        <Tag text={post.tag} />
+                        <Tag text={post.subreddit} />
                         <span className="text-[15px]/8 text-nowrap text-text-base font-semibold"> by {post.author}</span>
                     </div>
                     <p className="text-[30px] md:text-[40px] font-semibold text-text-50">{post.title}</p>

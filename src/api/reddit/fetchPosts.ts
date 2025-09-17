@@ -1,6 +1,6 @@
 import type { RedditToken } from "@utils/tokenStorage/tokenStorage";
 
-const REDDIT_BASE_URL = "https://www.reddit.com";
+const REDDIT_OAUTH_BASE_URL = "https://oauth.reddit.com";
 
 export interface RedditPostData {
     id: string;
@@ -33,12 +33,12 @@ export interface RedditResponse {
 
 export const fetchPosts = async (subReddit: string, accessToken: RedditToken): Promise<RedditResponse> => {
     
-    const endpoint = `/r/${subReddit}/new.json`;
+    const endpoint = `/r/${subReddit}/new`;
     try {
-        const response = await fetch(new URL(endpoint, REDDIT_BASE_URL), {
+        const response = await fetch(new URL(endpoint, REDDIT_OAUTH_BASE_URL), {
             method: "GET",
             headers: {
-                "User-Agent": "TEST",
+                "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
                 "Authorization": `Bearer ${accessToken.accessToken}`
             }
         });
@@ -56,7 +56,7 @@ export const fetchPosts = async (subReddit: string, accessToken: RedditToken): P
     }
 }
 
-export const getPost = async (_id: number): Promise<any> => {
+export const getPost = async (_id: number): Promise<RedditPostData | null> => {
     return new Promise((resolve) => {
         // TODO: implement fetching a post by id
         resolve(null);

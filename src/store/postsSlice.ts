@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { type Post } from '@models/Post';
-import { fetchPosts as getPosts } from '@api/reddit/fetchPosts';
+import { fetchPosts as getPosts, type RedditPostData } from '@api/reddit/fetchPosts';
 import api from '@api/mockedApi';
 import type { RootState } from '@store/store';
 import { SUBREDDITS } from '@config/reddit';
@@ -19,6 +19,19 @@ const initialState: PostsState = {
     error: null,
 };
 
+// Transform Reddit post data to our Post model
+const transformRedditPostToPost = (redditPost: RedditPostData): Post => {
+    return {
+        id: parseInt(redditPost.id, 36), // Convert Reddit's base36 ID to number
+        subreddit: redditPost.subreddit,
+        title: redditPost.title,
+        content: redditPost.selftext || redditPost.url || '',
+        author: redditPost.author,
+        commentsCount: redditPost.num_comments,
+        initialVoteCount: redditPost.score
+    };
+};
+
 export const fetchPostsBySubReddit = createAsyncThunk(
     "posts/fetchPostsBySubReddit",
     async (subreddit: string, {getState, rejectWithValue }) => {
@@ -31,12 +44,15 @@ export const fetchPostsBySubReddit = createAsyncThunk(
                 throw new Error("No access token is specified");
             }
             
-            const response = await getPosts(subreddit, accessToken) as any;
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to fetch posts');
-            }
+            // fetchPosts returns RedditResponse directly
+            const redditResponse = await getPosts(subreddit, accessToken);
+            
+            // Transform Reddit posts to our Post model
+            const transformedPosts = redditResponse.data.children.map(child => 
+                transformRedditPostToPost(child.data)
+            );
 
-            return response.data; 
+            return transformedPosts; 
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
         }
@@ -89,7 +105,7 @@ const postsSlice = createSlice({
                 state.loading = false;
                 // Add new posts that don't already exist
                 const existingIds = new Set(state.posts.map(post => post.id));
-                const newPosts = action.payload.filter((post: { id: number; }) => !existingIds.has(post.id));
+                const newPosts = action.payload.filter((post: Post) => !existingIds.has(post.id));
                 state.posts.push(...newPosts);
             })
             .addCase(fetchPostsBySubReddit.rejected, (state, action) => {

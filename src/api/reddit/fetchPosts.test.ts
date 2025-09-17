@@ -66,11 +66,12 @@ describe("fetchPosts", () => {
         
         expect(result).toEqual(mockResponse);
         expect(fetch).toHaveBeenCalledWith(
-            new URL("/r/python/new.json", "https://www.reddit.com"),
+            new URL("/r/python/new", "https://oauth.reddit.com"),
             expect.objectContaining({
                 method: "GET",
                 headers: expect.objectContaining({
-                    "User-Agent": "TEST"
+                    "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                    "Authorization": `Bearer ${mockToken.accessToken}`
                 })
             })
         );
@@ -88,11 +89,11 @@ describe("fetchPosts", () => {
         await fetchPosts(subreddit, mockToken);
         
         expect(fetch).toHaveBeenCalledWith(
-            new URL("/r/javascript/new.json", "https://www.reddit.com"),
+            new URL("/r/javascript/new", "https://oauth.reddit.com"),
             expect.objectContaining({
                 method: "GET",
                 headers: expect.objectContaining({
-                    "User-Agent": "TEST",
+                    "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
                     "Authorization": `Bearer ${mockToken.accessToken}`
                 })
             })

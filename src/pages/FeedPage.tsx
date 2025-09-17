@@ -13,24 +13,24 @@ const MAX_NUMBER_OF_RETRY = 2;
 
 const FeedPage = () => {
   const dispatch = useAppDispatch();
-  const { posts: allPosts, selectedSubReddit: selectedTag, loading, error } = useAppSelector((s) => s.posts);
+  const { posts: allPosts, selectedSubReddit, loading, error } = useAppSelector((s) => s.posts);
 
   const retryCountRef = useRef(0);
 
   const feedPosts = useMemo<Post[]>(() => {
-    return selectedTag === "All"
+    return selectedSubReddit === "All"
       ? allPosts
-      : allPosts.filter((p: Post) => p.tag === selectedTag);
-  }, [allPosts, selectedTag]);
+      : allPosts.filter((p: Post) => p.subreddit === selectedSubReddit);
+  }, [allPosts, selectedSubReddit]);
 
   const handleTagSelection = useCallback((tag: string) => {
-    if (tag !== selectedTag) dispatch(setSelectedSubReddit(tag));
-  }, [dispatch, selectedTag]);
+    if (tag !== selectedSubReddit) dispatch(setSelectedSubReddit(tag));
+  }, [dispatch, selectedSubReddit]);
 
   // Reset retry count when tag changes
   useEffect(() => {
     retryCountRef.current = 0;
-  }, [selectedTag]);
+  }, [selectedSubReddit]);
 
   // Fetch posts (threshold-based retry)
   useEffect(() => {
@@ -38,9 +38,9 @@ const FeedPage = () => {
     const canRetry = retryCountRef.current < MAX_NUMBER_OF_RETRY;
     if (!loading && needsMore && canRetry) {
       retryCountRef.current += 1;
-      dispatch(fetchPostsBySubReddit(selectedTag));
+      dispatch(fetchPostsBySubReddit(selectedSubReddit));
     }
-  }, [dispatch, selectedTag, feedPosts.length, loading]);
+  }, [dispatch, selectedSubReddit, feedPosts.length, loading]);
 
   const visible = useMemo(
     () => feedPosts.slice(0, MAX_NUMBER_OF_SHOWN_POSTS),
@@ -55,7 +55,7 @@ const FeedPage = () => {
             <li key={subReddit}>
               <TagSelector
                 text={subReddit}
-                selected={subReddit === selectedTag}
+                selected={subReddit === selectedSubReddit}
                 onClick={() => handleTagSelection(subReddit)}
               />
             </li>
@@ -71,7 +71,7 @@ const FeedPage = () => {
         )}
 
         {!loading && visible.length === 0 && !error && (
-          <p className="text-muted-foreground">No posts for “{selectedTag}”.</p>
+          <p className="text-muted-foreground">No posts for “{selectedSubReddit}”.</p>
         )}
 
         {visible.map((post) => (

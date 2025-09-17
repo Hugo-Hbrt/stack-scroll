@@ -1,6 +1,6 @@
 export interface Post {
     id: number;
-    tag: string;
+    subreddit: string;
     title: string;
     content: string;
     author: string;
@@ -10,7 +10,7 @@ export interface Post {
 
 export const createPost = (
     id: number,
-    tag: string,
+    subreddit: string,
     title: string,
     content: string,
     author: string,
@@ -18,7 +18,7 @@ export const createPost = (
     initialVoteCount: number
 ): Post => ({
     id,
-    tag,
+    subreddit,
     title,
     content,
     author,
