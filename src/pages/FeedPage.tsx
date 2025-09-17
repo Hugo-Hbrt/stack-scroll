@@ -3,18 +3,17 @@ import type { Post } from "@models/Post";
 import PostCard from "@components/Post/PostCard";
 import TagSelector from "@components/TagSelector/TagSelector";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { fetchPostsByTag, setSelectedTag } from "../store/postsSlice";
+import { fetchPostsBySubReddit, setSelectedSubReddit } from "../store/postsSlice";
 import LoadingSpinner from "@components/LoadingSpinner/LoadingSpinner";
+import { SUBREDDITS } from "@config/reddit";
 
 const MIN_NUMBER_OF_SHOWN_POSTS = 1;
 const MAX_NUMBER_OF_SHOWN_POSTS = 10;
 const MAX_NUMBER_OF_RETRY = 2;
 
-const TAGS = ["All", "Technology", "Travel", "Food", "Fitness", "Books"] as string[];
-
 const FeedPage = () => {
   const dispatch = useAppDispatch();
-  const { posts: allPosts, selectedTag, loading, error } = useAppSelector((s) => s.posts);
+  const { posts: allPosts, selectedSubReddit: selectedTag, loading, error } = useAppSelector((s) => s.posts);
 
   const retryCountRef = useRef(0);
 
@@ -25,7 +24,7 @@ const FeedPage = () => {
   }, [allPosts, selectedTag]);
 
   const handleTagSelection = useCallback((tag: string) => {
-    if (tag !== selectedTag) dispatch(setSelectedTag(tag));
+    if (tag !== selectedTag) dispatch(setSelectedSubReddit(tag));
   }, [dispatch, selectedTag]);
 
   // Reset retry count when tag changes
@@ -39,7 +38,7 @@ const FeedPage = () => {
     const canRetry = retryCountRef.current < MAX_NUMBER_OF_RETRY;
     if (!loading && needsMore && canRetry) {
       retryCountRef.current += 1;
-      dispatch(fetchPostsByTag(selectedTag));
+      dispatch(fetchPostsBySubReddit(selectedTag));
     }
   }, [dispatch, selectedTag, feedPosts.length, loading]);
 
@@ -52,12 +51,12 @@ const FeedPage = () => {
     <div className="flex flex-col">
       <div className="flex flex-col gap-4 items-center">
         <ul className="flex flex-row gap-4 flex-wrap justify-center" aria-label="Tag filters">
-          {TAGS.map((tag) => (
-            <li key={tag}>
+          {SUBREDDITS.map((subReddit) => (
+            <li key={subReddit}>
               <TagSelector
-                text={tag}
-                selected={tag === selectedTag}
-                onClick={() => handleTagSelection(tag)}
+                text={subReddit}
+                selected={subReddit === selectedTag}
+                onClick={() => handleTagSelection(subReddit)}
               />
             </li>
           ))}
