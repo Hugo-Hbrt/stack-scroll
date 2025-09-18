@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { fetchUserInfo } from './fetchUserInfo';
-import type { RedditToken } from '@utils/tokenStorage/tokenStorage';
+import type { RedditToken } from '@utils/sessionStorage/tokenStorage';
 
 const mockToken: RedditToken = {
     accessToken: 'test_access_token_123',
@@ -42,8 +42,8 @@ describe('fetchUserInfo', () => {
             {
                 method: 'GET',
                 headers: {
-                    'User-Agent': 'web:stack-scroll:v1.0.0 (by /u/haotin)',
-                    'Authorization': 'Bearer test_access_token_123'
+                    'User-Agent': "web:stack-scroll:v1.0.0 (by /u/stack_scroll_auth)",
+                    'Authorization': `Bearer ${mockToken.accessToken}`
                 }
             }
         );

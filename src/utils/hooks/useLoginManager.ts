@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@store/hooks";
 import { useLocation, useNavigate } from "react-router";
-import { SecureTokenStorage } from "@utils/tokenStorage/tokenStorage";
+import { SecureTokenStorage } from "@utils/sessionStorage/tokenStorage";
 import { loginSuccess, updateLoginStatus } from "@store/authSlice";
 import ROUTES from "@config/routes";
+import { UserInfoStorage } from "@utils/sessionStorage/userStorage";
 
 const useLoginManager = () => {
     const dispatch = useAppDispatch();
@@ -13,16 +14,19 @@ const useLoginManager = () => {
 
     // Login if token from storage is valid.
     useEffect(() => {
-        if (!isAuthenticated && SecureTokenStorage.hasValidToken()) {
+        if (!isAuthenticated && SecureTokenStorage.hasValidToken() && UserInfoStorage.hasValidUserInfo()) {
             const redditToken = SecureTokenStorage.getToken();
-            if (redditToken) {
+            const userInfo = UserInfoStorage.getUserInfo();
+            
+            if (redditToken && userInfo) {
                 dispatch(loginSuccess({
-                    accessToken: redditToken
+                    accessToken: redditToken,
+                    userInfo: userInfo
                 }));
                 navigate(ROUTES.FEED);
             }
         }
-    }, [])
+    }, []);
 
     // When user not logged in navigate back to home page.
     useEffect(() => {

@@ -1,8 +1,10 @@
 import { describe, it, vi, expect, beforeEach } from "vitest";
-import type { RedditToken } from "@utils/tokenStorage/tokenStorage";
+import type { RedditToken } from "@utils/sessionStorage/tokenStorage";
 import { fetchComments } from "./fetchComments";
+import { REDDIT_OAUTH_BASE_URL } from "@config/reddit";
+import type { UserInfo } from "@utils/sessionStorage/userStorage";
 
-const accessToken = "ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNklsTklRVEkxTmpwelMzZHNNbmxzVjBWdE1qVm1jWGh3VFU0MGNXWTRNWEUyT1dGRmRXRnlNbnBMTVVkaFZHeGpkV05aSWl3aWRIbHdJam9pU2xkVUluMC5leUp6ZFdJaU9pSjFjMlZ5SWl3aVpYaHdJam94TnpVNE1URXlOVGswTGpZd01ERTVPU3dpYVdGMElqb3hOelU0TURJMk1UazBMall3TERFNU9Td2lhblJwSWpvaWFtRnpVa1JLUjE5V2FHZGlUSGMzT1ZKbFFrcEtZVXhVWDJ0c1IxbFJJaXdpWTJsa0lqb2lORzh0TFRKSVRXeElSM0I0UW1sVlduUnVkMjVsVVNJc0lteHBaQ0k2SW5ReVh6VjFPSGR4WVhKMklpd2lZV2xrSWpvaWRESmZOWFU0ZDNGaGNuWWlMQ0pzWTJFaU9qRTFPRE15TnpBNE9ESTJPVFlzSW5OamNDSTZJbVZLZVV0V2FYQkxWRlY0VWpCc1JYRjVlVGxLVm1SS1VrdHBOVTU1Y3pCelZXUktVbmxyZUVwNlUzWktURXRzVlRCc1NFdDVRM2QxZVZNdGNWWkpiMFpDUVVGQlgxODVVVEpuT0c0aUxDSm1iRzhpT2pkOS5ndktENEsyM2dYQ2ZDdE80a2s2MkdXM3lpTjgwcXh0UGZTVDhac2didnBMbGhiQmFDRWlSSkZNSmQ5YWdmeG04VDRaMGVOYTU0c0g5X3c3NWdGVEFiVHBTQXB5ZU5vLVNtQzloUU9YSEVTVjdLRTNvOXdJUzV6NkZyT3JiQ2cyWVF6MXpIUUc3clBHZVI3R1NNRVhIZVZJejFWODE0ZVQxSkp5NXlTWWRsMWdhWUhLaURmQ3lKbjhvYUx4V0ZOM2x6LWhHMXRuXzZCWHp0NWtxeHVjcGhPa0Y5X0NNQ3BkVnNDekxkNE5hT0JlVjN2RjQtaFBISGF0R1pvTlRsTjlMRkJ5ZWQxX0VoU2o0OHlMY1YyTlp1SkNkZ21WbENpd0ppN25zRlhEYk1jNnBSbm1RRkctQUJGM29adlhOcFVPbjJqd2FzenRSLS1ITjdhdnQyZTNKSWc=";
+const accessToken = "test-token";
 
 vi.mock("@store/hooks", async () => {
     return {
@@ -13,9 +15,13 @@ vi.mock("@store/hooks", async () => {
                 scope: "scope",
                 expiresAt: Date.now() + 6000 * 10,
             } as RedditToken;
-        } 
+        }
     }
 });
+
+const mockUser = {
+    name: "redditUser",
+} as UserInfo;
 
 describe("fetchComments", () => {
     const mockToken: RedditToken = {
@@ -27,7 +33,7 @@ describe("fetchComments", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
     });
-    
+
     it("should throw error when fetch fails", async () => {
         // Mock fetch to return a failed response
         global.fetch = vi.fn().mockResolvedValueOnce({
@@ -38,8 +44,8 @@ describe("fetchComments", () => {
 
         const subreddit = "nonexistent";
         const postId = "invalid123";
-        
-        await expect(fetchComments(subreddit, postId, mockToken)).rejects.toThrow();
+
+        await expect(fetchComments(subreddit, postId, mockToken, mockUser)).rejects.toThrow();
     });
 
     it("should fetch comments successfully", async () => {
@@ -82,17 +88,16 @@ describe("fetchComments", () => {
 
         const subreddit = "test";
         const postId = "post123";
-        const result = await fetchComments(subreddit, postId, mockToken);
-        
+        const result = await fetchComments(subreddit, postId, mockToken, mockUser);
         expect(result).toEqual(mockResponse[1]); // Should return only comments data
         expect(result.data.children[0].data.id).toBe("comment123");
         expect(result.data.children[0].data.body).toBe("This is a test comment");
         expect(fetch).toHaveBeenCalledWith(
-            new URL("/r/test/comments/post123", "https://oauth.reddit.com"),
+            new URL("/r/test/comments/post123", REDDIT_OAUTH_BASE_URL),
             expect.objectContaining({
                 method: "GET",
                 headers: expect.objectContaining({
-                    "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                    "User-Agent": `web:stack-scroll:v1.0.0 (by /u/${mockUser.name})`,
                     "Authorization": `Bearer ${mockToken.accessToken}`
                 })
             })
@@ -112,14 +117,14 @@ describe("fetchComments", () => {
 
         const subreddit = "javascript";
         const postId = "abc123";
-        await fetchComments(subreddit, postId, mockToken);
-        
+        await fetchComments(subreddit, postId, mockToken, mockUser);
+
         expect(fetch).toHaveBeenCalledWith(
-            new URL("/r/javascript/comments/abc123", "https://oauth.reddit.com"),
+            new URL("/r/javascript/comments/abc123", REDDIT_OAUTH_BASE_URL),
             expect.objectContaining({
                 method: "GET",
                 headers: expect.objectContaining({
-                    "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                    "User-Agent": `web:stack-scroll:v1.0.0 (by /u/${mockUser.name})`,
                     "Authorization": `Bearer ${mockToken.accessToken}`
                 })
             })
@@ -131,8 +136,8 @@ describe("fetchComments", () => {
 
         const subreddit = "react";
         const postId = "xyz789";
-        
-        await expect(fetchComments(subreddit, postId, mockToken)).rejects.toThrow("Network error");
+
+        await expect(fetchComments(subreddit, postId, mockToken, mockUser)).rejects.toThrow("Network error");
     });
 
     it("should handle invalid JSON response", async () => {
@@ -143,8 +148,8 @@ describe("fetchComments", () => {
 
         const subreddit = "javascript";
         const postId = "def456";
-        
-        await expect(fetchComments(subreddit, postId, mockToken)).rejects.toThrow("Invalid JSON");
+
+        await expect(fetchComments(subreddit, postId, mockToken, mockUser)).rejects.toThrow("Invalid JSON");
     });
 });
 
@@ -229,20 +234,20 @@ describe("fetchComments - Integration Tests", () => {
             json: () => Promise.resolve(fullMockResponse)
         });
 
-        const result = await fetchComments("test", "post123", realToken);
-        
+        const result = await fetchComments("test", "post123", realToken, mockUser);
+
         expect(result).toEqual(sampleCommentsResponse);
         expect(result.data.children[0].data.id).toBe("comment123");
         expect(result.data.children[0].data.body).toBe("This is a test comment with **markdown**.");
         expect(result.data.children[0].data.score).toBe(42);
         expect(result.data.children[0].data.depth).toBe(0);
-        
+
         // Test nested replies
         const replies = result.data.children[0].data.replies as any;
         expect(replies.data.children[0].data.id).toBe("reply123");
         expect(replies.data.children[0].data.depth).toBe(1);
         expect(replies.data.children[0].data.is_submitter).toBe(true);
-        
+
         console.log("Reddit comments structure test passed with sample data");
     });
 });

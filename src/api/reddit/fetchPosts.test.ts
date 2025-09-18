@@ -1,8 +1,12 @@
 import { describe, it, vi, expect, beforeEach } from "vitest";
-import type { RedditToken } from "@utils/tokenStorage/tokenStorage";
+import type { RedditToken } from "@utils/sessionStorage/tokenStorage";
 import { fetchPosts } from "./fetchPosts";
+import { type UserInfo } from "@utils/sessionStorage/userStorage";
 
-const accessToken = "ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNklsTklRVEkxTmpwelMzZHNNbmxzVjBWdE1qVm1jWGh3VFU0MGNXWTRNWEUyT1dGRmRXRnlNbnBMTVVkaFZHeGpkV05aSWl3aWRIbHdJam9pU2xkVUluMC5leUp6ZFdJaU9pSjFjMlZ5SWl3aVpYaHdJam94TnpVNE1URXlOVGswTGpZd01ERTVPU3dpYVdGMElqb3hOelU0TURJMk1UazBMall3TURFNU9Td2lhblJwSWpvaWFtRnpVa1JLUjE5V2FHZGlUSGMzT1ZKbFFrcEtZVXhVWDJ0c1IxbFJJaXdpWTJsa0lqb2lORzh0TFRKSVRXeElSM0I0UW1sVlduUnVkMjVsVVNJc0lteHBaQ0k2SW5ReVh6VjFPSGR4WVhKMklpd2lZV2xrSWpvaWRESmZOWFU0ZDNGaGNuWWlMQ0pzWTJFaU9qRTFPRE15TnpBNE9ESTJPVFlzSW5OamNDSTZJbVZLZVV0V2FYQkxWRlY0VWpCc1JYRjVlVGxLVm1SS1VrdHBOVTU1Y3pCelZXUktVbmxyZUVwNlUzWktURXRzVlRCc1NFdDVRM2QxZVZNdGNWWkpiMFpDUVVGQlgxODVVVEpuT0c0aUxDSm1iRzhpT2pkOS5ndktENEsyM2dYQ2ZDdE80a2s2MkdXM3lpTjgwcXh0UGZTVDhac2didnBMbGhiQmFDRWlSSkZNSmQ5YWdmeG04VDRaMGVOYTU0c0g5X3c3NWdGVEFiVHBTQXB5ZU5vLVNtQzloUU9YSEVTVjdLRTNvOXdJUzV6NkZyT3JiQ2cyWVF6MXpIUUc3clBHZVI3R1NNRVhIZVZJejFWODE0ZVQxSkp5NXlTWWRsMWdhWUhLaURmQ3lKbjhvYUx4V0ZOM2x6LWhHMXRuXzZCWHp0NWtxeHVjcGhPa0Y5X0NNQ3BkVnNDekxkNE5hT0JlVjN2RjQtaFBISGF0R1pvTlRsTjlMRkJ5ZWQxX0VoU2o0OHlMY1YyTlp1SkNkZ21WbENpd0ppN25zRlhEYk1jNnBSbm1RRkctQUJGM29adlhOcFVPbjJqd2FzenRSLS1ITjdhdnQyZTNKSWc=";
+const accessToken = "test-token";
+const mockUser = {
+    name: "redditUser",
+} as UserInfo;
 
 vi.mock("@store/hooks", async () => {
     return {
@@ -13,7 +17,7 @@ vi.mock("@store/hooks", async () => {
                 scope: "scope",
                 expiresAt: Date.now() + 6000 * 10,
             } as RedditToken;
-        } 
+        }
     }
 });
 
@@ -27,7 +31,7 @@ describe("fetchPosts", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
     });
-    
+
     it("should throw error when fetch fails", async () => {
         // Mock fetch to return a failed response
         global.fetch = vi.fn().mockResolvedValueOnce({
@@ -37,8 +41,8 @@ describe("fetchPosts", () => {
         });
 
         const subreddit = "nonexistent";
-        
-        await expect(fetchPosts(subreddit, mockToken)).rejects.toThrow();
+
+        await expect(fetchPosts(subreddit, mockToken, mockUser)).rejects.toThrow();
     });
 
     it("should fetch posts successfully", async () => {
@@ -62,15 +66,15 @@ describe("fetchPosts", () => {
         });
 
         const subreddit = "python";
-        const result = await fetchPosts(subreddit, mockToken);
-        
+        const result = await fetchPosts(subreddit, mockToken, mockUser);
+
         expect(result).toEqual(mockResponse);
         expect(fetch).toHaveBeenCalledWith(
             new URL("/r/python/new", "https://oauth.reddit.com"),
             expect.objectContaining({
                 method: "GET",
                 headers: expect.objectContaining({
-                    "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                    "User-Agent": `web:stack-scroll:v1.0.0 (by /u/${mockUser.name})`,
                     "Authorization": `Bearer ${mockToken.accessToken}`
                 })
             })
@@ -86,14 +90,14 @@ describe("fetchPosts", () => {
         });
 
         const subreddit = "javascript";
-        await fetchPosts(subreddit, mockToken);
-        
+        await fetchPosts(subreddit, mockToken, mockUser);
+
         expect(fetch).toHaveBeenCalledWith(
             new URL("/r/javascript/new", "https://oauth.reddit.com"),
             expect.objectContaining({
                 method: "GET",
                 headers: expect.objectContaining({
-                    "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                    "User-Agent": `web:stack-scroll:v1.0.0 (by /u/${mockUser.name})`,
                     "Authorization": `Bearer ${mockToken.accessToken}`
                 })
             })
@@ -104,8 +108,8 @@ describe("fetchPosts", () => {
         global.fetch = vi.fn().mockRejectedValueOnce(new Error("Network error"));
 
         const subreddit = "react";
-        
-        await expect(fetchPosts(subreddit, mockToken)).rejects.toThrow("Network error");
+
+        await expect(fetchPosts(subreddit, mockToken, mockUser)).rejects.toThrow("Network error");
     });
 
     it("should handle invalid JSON response", async () => {
@@ -115,8 +119,8 @@ describe("fetchPosts", () => {
         });
 
         const subreddit = "javascript";
-        
-        await expect(fetchPosts(subreddit, mockToken)).rejects.toThrow("Invalid JSON");
+
+        await expect(fetchPosts(subreddit, mockToken, mockUser)).rejects.toThrow("Invalid JSON");
     });
 });
 
@@ -177,15 +181,15 @@ describe("fetchPosts - Integration Tests", () => {
             json: () => Promise.resolve(sampleRedditResponse)
         });
 
-        const result = await fetchPosts("test", realToken);
-        
+        const result = await fetchPosts("test", realToken, mockUser);
+
         expect(result).toEqual(sampleRedditResponse);
         expect(result.data.children[0].data.id).toBe("test123");
         expect(result.data.children[0].data.title).toBe("Test Post Title");
         expect(result.data.children[0].data.author).toBe("testuser");
         expect(result.data.children[0].data.score).toBe(42);
         expect(result.data.children[0].data.over_18).toBe(false);
-        
+
         console.log("Reddit API structure test passed with sample data");
     });
 })

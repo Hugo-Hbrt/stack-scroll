@@ -1,5 +1,5 @@
 import { REDDIT_OAUTH_BASE_URL } from "@config/reddit";
-import { type RedditToken } from "@utils/tokenStorage/tokenStorage";
+import { type RedditToken } from "@utils/sessionStorage/tokenStorage";
 
 export interface RedditUserData {
     id: string;
@@ -29,7 +29,7 @@ export const fetchUserInfo = async (accessToken: RedditToken): Promise<RedditUse
     const response = await fetch(new URL(endpoint, REDDIT_OAUTH_BASE_URL), {
         method: "GET",
         headers: {
-            "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+            "User-Agent": "web:stack-scroll:v1.0.0 (by /u/stack_scroll_auth)",
             "Authorization": `Bearer ${accessToken.accessToken}`
         }
     });

@@ -19,5 +19,6 @@ const REDDIT_CONFIG = {
 };
 
 export const SUBREDDITS = ["Python", "programming", "react", "MachineLearning"];
+export const REDDIT_OAUTH_BASE_URL = "https://oauth.reddit.com";
 
 export default REDDIT_CONFIG;

@@ -1,7 +1,6 @@
-import type { RedditToken } from "@utils/tokenStorage/tokenStorage";
-
-const REDDIT_OAUTH_BASE_URL = "https://oauth.reddit.com";
-
+import type { RedditToken } from "@utils/sessionStorage/tokenStorage";
+import { REDDIT_OAUTH_BASE_URL } from "@config/reddit";
+import type { UserInfo } from "@utils/sessionStorage/userStorage";
 export interface RedditCommentData {
     id: string;
     author: string;
@@ -40,7 +39,8 @@ export interface RedditPostWithCommentsResponse extends Array<any> {
 export const fetchComments = async (
     subreddit: string, 
     postId: string, 
-    accessToken: RedditToken
+    accessToken: RedditToken,
+    userInfo: UserInfo,
 ): Promise<RedditCommentsResponse> => {
     
     const endpoint = `/r/${subreddit}/comments/${postId}`;
@@ -48,7 +48,7 @@ export const fetchComments = async (
         const response = await fetch(new URL(endpoint, REDDIT_OAUTH_BASE_URL), {
             method: "GET",
             headers: {
-                "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                "User-Agent": `web:stack-scroll:v1.0.0 (by /u/${userInfo.name})`,
                 "Authorization": `Bearer ${accessToken.accessToken}`
             }
         });

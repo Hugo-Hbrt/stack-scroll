@@ -1,4 +1,5 @@
-import type { RedditToken } from "@utils/tokenStorage/tokenStorage";
+import type { RedditToken } from "@utils/sessionStorage/tokenStorage";
+import type { UserInfo } from "@utils/sessionStorage/userStorage";
 
 const REDDIT_OAUTH_BASE_URL = "https://oauth.reddit.com";
 
@@ -31,14 +32,14 @@ export interface RedditResponse {
     };
 }
 
-export const fetchPosts = async (subReddit: string, accessToken: RedditToken): Promise<RedditResponse> => {
+export const fetchPosts = async (subReddit: string, accessToken: RedditToken, userInfo: UserInfo): Promise<RedditResponse> => {
     
     const endpoint = `/r/${subReddit}/new`;
     try {
         const response = await fetch(new URL(endpoint, REDDIT_OAUTH_BASE_URL), {
             method: "GET",
             headers: {
-                "User-Agent": "web:stack-scroll:v1.0.0 (by /u/haotin)",
+                "User-Agent": `web:stack-scroll:v1.0.0 (by /u/${userInfo.name})`,
                 "Authorization": `Bearer ${accessToken.accessToken}`
             }
         });

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { type Post } from '@models/Post';
-import { fetchPosts as getPosts, type RedditPostData } from '@api/reddit/fetchPosts';
+import { fetchPosts, type RedditPostData } from '@api/reddit/fetchPosts';
 import api from '@api/mockedApi';
 import type { RootState } from '@store/store';
 import { SUBREDDITS } from '@config/reddit';
@@ -40,13 +40,17 @@ export const fetchPostsBySubReddit = createAsyncThunk(
             const state = getState() as RootState;
             
             const accessToken = state.auth.accessToken;
-
+            const userInfo = state.auth.userInfo;
             if (!accessToken) {
-                throw new Error("No access token is specified");
+                throw new Error("No access token.");
             }
             
+            if (!userInfo) {
+                throw new Error("No user info.");
+            }
+
             // fetchPosts returns RedditResponse directly
-            const redditResponse = await getPosts(subreddit, accessToken);
+            const redditResponse = await fetchPosts(subreddit, accessToken, userInfo);
             
             // Transform Reddit posts to our Post model
             const transformedPosts = redditResponse.data.children.map(child => 
