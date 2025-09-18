@@ -23,6 +23,7 @@ const initialState: PostsState = {
 const transformRedditPostToPost = (redditPost: RedditPostData): Post => {
     return {
         id: parseInt(redditPost.id, 36), // Convert Reddit's base36 ID to number
+        redditId: redditPost.id, // Keep original Reddit ID for API calls
         subreddit: redditPost.subreddit,
         title: redditPost.title,
         content: redditPost.selftext || redditPost.url || '',

@@ -18,6 +18,6 @@ const REDDIT_CONFIG = {
   responseType: 'token', // Important: Use 'token' not 'code'
 };
 
-export const SUBREDDITS = ["Python"];
+export const SUBREDDITS = ["Python", "programming", "react", "MachineLearning"];
 
 export default REDDIT_CONFIG;

@@ -87,7 +87,7 @@ describe('FeedPage Retry Behavior', () => {
 
     it('should not fetch when enough posts exist', async () => {
       const mockPosts = [
-        createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)
+        createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 0, 10)
       ];
       
       const postsState = createPostsState(mockPosts);
@@ -141,7 +141,7 @@ describe('FeedPage Retry Behavior', () => {
     it('should not retry if first fetch returns some posts', async () => {
       // Mock API to return posts
       const mockedApi = await import('../api/mockedApi');
-      const mockPosts = [createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
+      const mockPosts = [createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
       vi.mocked(mockedApi.default.getPostsByTag).mockResolvedValueOnce({
         success: true,
         data: mockPosts
@@ -292,7 +292,7 @@ describe('FeedPage Retry Behavior', () => {
       vi.mocked(mockedApi.default.getPostsByTag)
         .mockResolvedValueOnce({ success: true, data: [] })  // Technology: first call
         .mockResolvedValueOnce({ success: true, data: [] })  // Technology: retry
-        .mockResolvedValueOnce({ success: true, data: [createPost(1, 'Travel', 'Test', 'Content', 'author', 0, 10)] }); // Travel: first call
+        .mockResolvedValueOnce({ success: true, data: [createPost(1, '1', 'Travel', 'Test', 'Content', 'author', 0, 10)] }); // Travel: first call
 
       const postsState = createPostsState([], 'Technology', false);
       const { store, dispatchSpy } = renderFeedPageWithStore(postsState);
@@ -334,7 +334,7 @@ describe('FeedPage Retry Behavior', () => {
     describe('Test 2: Should hide spinner when loading is false', () => {
       it('should not display spinner when loading state is false', () => {
         // Create state with posts so fetch doesn't trigger and set loading to true
-        const mockPosts = [createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
+        const mockPosts = [createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
         const postsState = createPostsState(mockPosts, 'Technology', false);
         const { container } = renderFeedPageWithStore(postsState);
 

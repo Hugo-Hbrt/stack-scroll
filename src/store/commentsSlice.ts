@@ -1,6 +1,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { type Comment } from '@models/Comment';
+import { fetchComments as getRedditComments, type RedditCommentData } from '@api/reddit/fetchComments';
+import type { RootState } from '@store/store';
 import api from '../api/mockedApi';
 
 interface CommentsState {
@@ -13,6 +15,35 @@ const initialState: CommentsState = {
     commentsByPostId: {},
     loading: false,
     error: null,
+};
+
+// Transform Reddit comment data to our Comment model
+const transformRedditCommentToComment = (redditComment: RedditCommentData, postId: number): Comment => {
+    return {
+        id: parseInt(redditComment.id, 36), // Convert Reddit's base36 ID to number
+        postId: postId,
+        author: redditComment.author,
+        content: redditComment.body,
+        votes: redditComment.score
+    };
+};
+
+// Recursively flatten nested Reddit comments into flat array
+const flattenRedditComments = (redditComments: RedditCommentData[], postId: number): Comment[] => {
+    const flatComments: Comment[] = [];
+    
+    for (const redditComment of redditComments) {
+        // Add the current comment
+        flatComments.push(transformRedditCommentToComment(redditComment, postId));
+        
+        // If it has replies, recursively add them
+        if (redditComment.replies && typeof redditComment.replies === 'object' && redditComment.replies.data) {
+            const nestedComments = redditComment.replies.data.children.map(child => child.data);
+            flatComments.push(...flattenRedditComments(nestedComments, postId));
+        }
+    }
+    
+    return flatComments;
 };
 
 export const fetchComments = createAsyncThunk(
@@ -32,13 +63,24 @@ export const fetchComments = createAsyncThunk(
 
 export const fetchCommentsByPostId = createAsyncThunk(
     "comments/fetchCommentsByPostId",
-    async (postId: number, { rejectWithValue }) => {
+    async (params: { subreddit: string; postId: string; numericPostId: number }, { getState, rejectWithValue }) => {
         try {
-            const response = await api.getComments(postId);
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to fetch comments');
+            const state = getState() as RootState;
+            
+            const accessToken = state.auth.accessToken;
+
+            if (!accessToken) {
+                throw new Error("No access token is specified");
             }
-            return { postId, comments: response.data };
+            
+            // fetchComments returns RedditCommentsResponse directly
+            const redditResponse = await getRedditComments(params.subreddit, params.postId, accessToken);
+            
+            // Transform Reddit comments to our Comment model (flattened)
+            const redditCommentData = redditResponse.data.children.map(child => child.data);
+            const transformedComments = flattenRedditComments(redditCommentData, params.numericPostId);
+
+            return { postId: params.numericPostId, comments: transformedComments };
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
         }

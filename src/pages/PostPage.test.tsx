@@ -75,7 +75,7 @@ describe('PostPage Comments Fetching', () => {
   describe('Test 1: Should fetch comments when post.commentsCount > comments.length', () => {
     it('should dispatch fetchCommentsByPostId when post has more comments than stored', async () => {
       // Create post with 5 comments but store only has 2
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
@@ -96,7 +96,7 @@ describe('PostPage Comments Fetching', () => {
 
     it('should not fetch when post.commentsCount equals comments.length', () => {
       // Create post with 2 comments and store has 2 comments
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 2, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 2, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
@@ -112,7 +112,7 @@ describe('PostPage Comments Fetching', () => {
 
     it('should not fetch when post.commentsCount is less than comments.length', () => {
       // Edge case: store has more comments than post indicates
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 1, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 1, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
@@ -129,7 +129,7 @@ describe('PostPage Comments Fetching', () => {
 
   describe('Test 2: Should not fetch when already loading', () => {
     it('should not dispatch fetchCommentsByPostId when comments are loading', () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       const mockComments = [createComment(1, 1, 'Comment 1', 'user1', 0)];
 
       const postsState = createDefaultPostsState([mockPost]);
@@ -144,7 +144,7 @@ describe('PostPage Comments Fetching', () => {
 
   describe('Test 3: Should handle missing comments array', () => {
     it('should fetch comments when no comments exist for post', async () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 3, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 3, 0);
       
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({}); // No comments for any post
@@ -162,7 +162,7 @@ describe('PostPage Comments Fetching', () => {
 
   describe('Test 4: Should pass correct postId to fetchCommentsByPostId', () => {
     it('should dispatch fetchCommentsByPostId with correct postId', async () => {
-      const mockPost = createPost(42, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+      const mockPost = createPost(42, '42', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({});
@@ -182,7 +182,7 @@ describe('PostPage Comments Fetching', () => {
 
   describe('Test 5: Should show loading spinner when fetching comments', () => {
     it('should display loading spinner when comments are being fetched', () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({});
@@ -200,7 +200,7 @@ describe('PostPage Comments Fetching', () => {
   describe('Test 6: Should hide loading spinner when not loading comments', () => {
     it('should not display loading spinner when comments match post commentsCount', () => {
       // Post with 2 commentsCount and store has exactly 2 comments
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 2, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 2, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
@@ -222,7 +222,7 @@ describe('PostPage Comments Fetching', () => {
 
   describe('Test 7: Should show spinner with correct styling and placement', () => {
     it('should display spinner with correct classes and accessibility attributes', () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = {
@@ -297,7 +297,7 @@ describe('PostPage Comments Fetching', () => {
     describe('Test 10: Should not refetch post if already in store', () => {
       it('should not dispatch fetchPostById when post exists in store', () => {
         // Post already exists in store
-        const mockPost = createPost(42, 'Technology', 'Existing Post', 'Content', 'author', 0, 0);
+        const mockPost = createPost(42, '42', 'Technology', 'Existing Post', 'Content', 'author', 0, 0);
         const postsState = createDefaultPostsState([mockPost]);
         const commentsState = createDefaultCommentsState({});
         
@@ -338,7 +338,7 @@ describe('PostPage Comments Fetching', () => {
       describe('Test 12: Should hide loading PostSection when post fetch completes', () => {
         it('should display actual PostSection when post is loaded and not show loading skeleton', () => {
           // Post exists in store, loading is false
-          const mockPost = createPost(42, 'Technology', 'Real Post', 'Content', 'author', 0, 0);
+          const mockPost = createPost(42, '42', 'Technology', 'Real Post', 'Content', 'author', 0, 0);
           const postsState = createDefaultPostsState([mockPost]);
           postsState.loading = false; // Set posts loading to false
           const commentsState = createDefaultCommentsState({});

@@ -46,9 +46,13 @@ const PostPage = () => {
     useEffect(() => {
         if (post && post.commentsCount > comments.length && !commentsLoading && !hasFetchedComments) {
             setHasFetchedComments(true);
-            dispatch(fetchCommentsByPostId(postIdNumber));
+            dispatch(fetchCommentsByPostId({
+                subreddit: post.subreddit,
+                postId: post.redditId,
+                numericPostId: postIdNumber
+            }));
         }
-    }, [post?.id, post?.commentsCount, comments.length, commentsLoading, hasFetchedComments, postIdNumber]);
+    }, [post?.id, post?.commentsCount, comments.length, commentsLoading, hasFetchedComments, postIdNumber, post?.subreddit, post?.redditId]);
 
     // Reset fetch flag when post changes
     useEffect(() => {

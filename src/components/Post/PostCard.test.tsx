@@ -48,6 +48,7 @@ import type { Post } from "@models/Post";
 
 const defaultPost: Post = {
     id: 1,
+    redditId: "1",
     subreddit: "React",
     title: "Test Title",
     content: "Test content for the post.",

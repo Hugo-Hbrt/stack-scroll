@@ -163,5 +163,5 @@ Would I do it again? Absolutely. Benefits outweigh challenges.`,
     }
 ];
 
-const posts = postData.map(post => createPost(post.id, post.subjectTag, post.title, post.content, post.authorUsername, post.numberOfComments, post.numberOfVotes));
+const posts = postData.map(post => createPost(post.id, post.id.toString(36), post.subjectTag, post.title, post.content, post.authorUsername, post.numberOfComments, post.numberOfVotes));
 export default posts;
