@@ -33,7 +33,7 @@ export class SecureTokenStorage {
             if (!encryptedAccessToken || !expiresAt || !scope) {
                 return null;
             }
-            
+
             if (Date.now() > parseInt(expiresAt)) {
                 this.clearToken();
                 return null;
@@ -56,18 +56,14 @@ export class SecureTokenStorage {
     }
 
     static clearToken = () => {
-        try {
-            sessionStorage.removeItem(this.ACCESS_TOKEN_KEY);
-            sessionStorage.removeItem(this.EXPIRES_AT_KEY);
-            sessionStorage.removeItem(this.SCOPE_KEY);
-        } catch (error) {
-            console.log("Couldn't clear tokens : ", error);
-        }
+        sessionStorage.removeItem(this.ACCESS_TOKEN_KEY);
+        sessionStorage.removeItem(this.EXPIRES_AT_KEY);
+        sessionStorage.removeItem(this.SCOPE_KEY);
     }
 
     static hasValidToken = (): boolean => {
         const expiresAt = sessionStorage.getItem(this.EXPIRES_AT_KEY);
-        
+
         if (expiresAt === null) {
             return false;
         } else {
