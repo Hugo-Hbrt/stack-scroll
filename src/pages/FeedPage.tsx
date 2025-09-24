@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useCallback } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import type { Post } from "@models/Post";
 import PostCard from "@components/Post/PostCard";
 import TagSelector from "@components/TagSelector/TagSelector";
@@ -7,15 +7,11 @@ import { fetchPostsBySubReddit, setSelectedSubReddit } from "../store/postsSlice
 import LoadingSpinner from "@components/LoadingSpinner/LoadingSpinner";
 import { SUBREDDITS } from "@config/reddit";
 
-const MIN_NUMBER_OF_SHOWN_POSTS = 1;
 const MAX_NUMBER_OF_SHOWN_POSTS = 10;
-const MAX_NUMBER_OF_RETRY = 2;
 
 const FeedPage = () => {
   const dispatch = useAppDispatch();
   const { posts: allPosts, selectedSubReddit, loading, error } = useAppSelector((s) => s.posts);
-
-  const retryCountRef = useRef(0);
 
   const feedPosts = useMemo<Post[]>(() => {
     return selectedSubReddit === "All"
@@ -27,20 +23,10 @@ const FeedPage = () => {
     if (tag !== selectedSubReddit) dispatch(setSelectedSubReddit(tag));
   }, [dispatch, selectedSubReddit]);
 
-  // Reset retry count when tag changes
+  // Fetch posts once when component mounts or when subreddit changes
   useEffect(() => {
-    retryCountRef.current = 0;
-  }, [selectedSubReddit]);
-
-  // Fetch posts (threshold-based retry)
-  useEffect(() => {
-    const needsMore = feedPosts.length < MIN_NUMBER_OF_SHOWN_POSTS;
-    const canRetry = retryCountRef.current < MAX_NUMBER_OF_RETRY;
-    if (!loading && needsMore && canRetry) {
-      retryCountRef.current += 1;
-      dispatch(fetchPostsBySubReddit(selectedSubReddit));
-    }
-  }, [dispatch, selectedSubReddit, feedPosts.length, loading]);
+    dispatch(fetchPostsBySubReddit(selectedSubReddit));
+  }, [dispatch, selectedSubReddit]);
 
   const visible = useMemo(
     () => feedPosts.slice(0, MAX_NUMBER_OF_SHOWN_POSTS),
