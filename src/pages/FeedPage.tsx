@@ -2,8 +2,8 @@ import { useEffect, useMemo, useCallback } from "react";
 import type { Post } from "@models/Post";
 import PostCard from "@components/Post/PostCard";
 import TagSelector from "@components/TagSelector/TagSelector";
-import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { fetchPostsBySubReddit, setSelectedSubReddit } from "../store/postsSlice";
+import { useAppSelector, useAppDispatch } from "@store/hooks";
+import { fetchPostsBySubReddit, setSelectedSubReddit } from "@store/postsSlice";
 import LoadingSpinner from "@components/LoadingSpinner/LoadingSpinner";
 import { SUBREDDITS } from "@config/reddit";
 
@@ -14,9 +14,7 @@ const FeedPage = () => {
   const { posts: allPosts, selectedSubReddit, loading, error } = useAppSelector((s) => s.posts);
 
   const feedPosts = useMemo<Post[]>(() => {
-    return selectedSubReddit === "All"
-      ? allPosts
-      : allPosts.filter((p: Post) => p.subreddit === selectedSubReddit);
+    return allPosts.filter((p: Post) => p.subreddit === selectedSubReddit);
   }, [allPosts, selectedSubReddit]);
 
   const handleTagSelection = useCallback((tag: string) => {
@@ -57,7 +55,7 @@ const FeedPage = () => {
         )}
 
         {!loading && visible.length === 0 && !error && (
-          <p className="text-muted-foreground">No posts for “{selectedSubReddit}”.</p>
+          <p className="text-red-600">No posts for “{selectedSubReddit}”.</p>
         )}
 
         {visible.map((post) => (
