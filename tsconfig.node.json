@@ -10,6 +10,7 @@
       "@config/*": ["src/config/*"],
       "@store/*": ["src/store/*"],
       "@api/*": ["src/api/*"],
+      "@test/*": ["src/test/*"],
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",

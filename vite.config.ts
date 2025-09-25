@@ -41,6 +41,7 @@ export default defineConfig({
       "@config": path.resolve(__dirname, 'src/config'),
       "@store": path.resolve(__dirname, 'src/store'),
       "@api": path.resolve(__dirname, 'src/api'),
+      "@test": path.resolve(__dirname, 'src/test')
     }
   }
 } as UserConfig)
