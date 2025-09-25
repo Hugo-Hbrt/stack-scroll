@@ -3,8 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import App from './App'
 import { BrowserRouter } from 'react-router'
-import { store } from './store/store';
+import { setupStore } from './store/store';
 
+const store = setupStore({}, true);
 const rootElement = document.getElementById('root');
 
 if (rootElement) {

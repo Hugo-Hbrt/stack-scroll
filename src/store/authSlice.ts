@@ -3,7 +3,8 @@ import { SecureTokenStorage } from '@utils/sessionStorage/tokenStorage';
 import { type RedditToken } from '@utils/sessionStorage/tokenStorage';
 import { fetchUserInfo } from '@api/reddit/fetchUserInfo';
 import { UserInfoStorage, type UserInfo } from '@utils/sessionStorage/userStorage';
-interface AuthState {
+
+export interface AuthState {
   isAuthenticated: boolean;
   accessToken: RedditToken | null;
   userInfo: UserInfo | null;

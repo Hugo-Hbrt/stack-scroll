@@ -5,7 +5,8 @@ import { fetchPosts, type RedditPostData } from '@api/reddit/fetchPosts';
 import api from '@api/mockedApi';
 import type { RootState } from '@store/store';
 import { SUBREDDITS } from '@config/reddit';
-interface PostsState {
+
+export interface PostsState {
     posts: Post[];
     selectedSubReddit: string;
     loading: boolean;

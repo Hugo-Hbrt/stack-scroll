@@ -5,7 +5,7 @@ import { fetchComments as fetchRedditComments, type RedditCommentData } from '@a
 import type { RootState } from '@store/store';
 import api from '../api/mockedApi';
 
-interface CommentsState {
+export interface CommentsState {
     commentsByPostId: { [postId: number]: Comment[] };
     loading: boolean;
     error: string | null;
