@@ -1,14 +1,13 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, assert} from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import FeedPage from './FeedPage';
 import postsReducer from '../store/postsSlice';
 import commentsReducer from '../store/commentsSlice';
-import { createPost } from '@models/Post';
 
 // Mock the API
 vi.mock('../api/mockedApi', () => ({
@@ -102,9 +101,14 @@ describe('FeedPage Basic Behavior', () => {
 
       // Should dispatch fetchPostsBySubReddit for new tag
       expect(dispatchSpy).toHaveBeenCalled();
+
       // Find the fetchPostsBySubReddit call (should be a thunk function)
       const fetchCall = dispatchSpy.mock.calls.find(call => typeof call[0] === 'function');
-      expect(fetchCall).toBeDefined();
+      
+      if (fetchCall === undefined)
+      {
+        assert.fail("fetchCall not defined.")
+      }
       expect(typeof fetchCall[0]).toBe('function');
     });
   });

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { type Comment } from '@models/Comment';
-import { fetchComments as getRedditComments, type RedditCommentData } from '@api/reddit/fetchComments';
+import { fetchComments as fetchRedditComments, type RedditCommentData } from '@api/reddit/fetchComments';
 import type { RootState } from '@store/store';
 import api from '../api/mockedApi';
 
@@ -68,13 +68,17 @@ export const fetchCommentsByPostId = createAsyncThunk(
             const state = getState() as RootState;
             
             const accessToken = state.auth.accessToken;
-
             if (!accessToken) {
-                throw new Error("No access token is specified");
+                throw new Error("No access token or is specified");
+            }
+
+            const userInfo = state.auth.userInfo;
+            if (!userInfo) {
+                throw new Error("No userInfo is specified");
             }
             
             // fetchComments returns RedditCommentsResponse directly
-            const redditResponse = await getRedditComments(params.subreddit, params.postId, accessToken);
+            const redditResponse = await fetchRedditComments(params.subreddit, params.postId, accessToken, userInfo);
             
             // Transform Reddit comments to our Comment model (flattened)
             const redditCommentData = redditResponse.data.children.map(child => child.data);
