@@ -59,7 +59,7 @@ class MockedApi {
         try {
             const filteredPosts = tag === 'All' 
                 ? this.posts 
-                : this.posts.filter(post => post.tag === tag);
+                : this.posts.filter(post => post.subreddit === tag);
             
             return {
                 data: filteredPosts,

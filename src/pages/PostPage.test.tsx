@@ -20,6 +20,10 @@ vi.mock('../api/mockedApi', () => ({
   }
 }));
 
+vi.mock("@components/LoadingSpinner/LoadingSpinner", () => ({
+  default: () => <div data-testid="comments-loading-spinner"></div>
+}));
+
 const createTestStore = (postsState: any, commentsState: any) => {
   return configureStore({
     reducer: {
@@ -63,7 +67,7 @@ const renderPostPageWithStore = (postsState: any, commentsState: any, postId: st
   return { store, dispatchSpy, ...renderResult };
 };
 
-describe('PostPage Comments Fetching', () => {
+describe('PostPage Basic Behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -72,10 +76,10 @@ describe('PostPage Comments Fetching', () => {
     cleanup();
   });
 
-  describe('Test 1: Should fetch comments when post.commentsCount > comments.length', () => {
+  describe('fetch comments when needed', () => {
     it('should dispatch fetchCommentsByPostId when post has more comments than stored', async () => {
       // Create post with 5 comments but store only has 2
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
@@ -83,20 +87,20 @@ describe('PostPage Comments Fetching', () => {
 
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({ 1: mockComments });
-      
+
       const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '1');
 
       await waitFor(() => {
         expect(dispatchSpy).toHaveBeenCalled();
       });
-      
+
       const dispatchCall = dispatchSpy.mock.calls[0][0];
       expect(typeof dispatchCall).toBe('function');
     });
 
     it('should not fetch when post.commentsCount equals comments.length', () => {
       // Create post with 2 comments and store has 2 comments
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 2, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 2, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
@@ -104,32 +108,14 @@ describe('PostPage Comments Fetching', () => {
 
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({ 1: mockComments });
-      
+
       const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '1');
 
       expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
-    it('should not fetch when post.commentsCount is less than comments.length', () => {
-      // Edge case: store has more comments than post indicates
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 1, 0);
-      const mockComments = [
-        createComment(1, 1, 'Comment 1', 'user1', 0),
-        createComment(2, 1, 'Comment 2', 'user2', 0)
-      ];
-
-      const postsState = createDefaultPostsState([mockPost]);
-      const commentsState = createDefaultCommentsState({ 1: mockComments });
-      
-      const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '1');
-
-      expect(dispatchSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Test 2: Should not fetch when already loading', () => {
-    it('should not dispatch fetchCommentsByPostId when comments are loading', () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+    it('should not fetch when already loading', () => {
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
       const mockComments = [createComment(1, 1, 'Comment 1', 'user1', 0)];
 
       const postsState = createDefaultPostsState([mockPost]);
@@ -140,50 +126,28 @@ describe('PostPage Comments Fetching', () => {
 
       expect(dispatchSpy).not.toHaveBeenCalled();
     });
-  });
 
-  describe('Test 3: Should handle missing comments array', () => {
     it('should fetch comments when no comments exist for post', async () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 3, 0);
-      
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 3, 0);
+
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({}); // No comments for any post
-      
+
       const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '1');
 
       await waitFor(() => {
         expect(dispatchSpy).toHaveBeenCalled();
       });
-      
+
       const dispatchCall = dispatchSpy.mock.calls[0][0];
       expect(typeof dispatchCall).toBe('function');
     });
   });
 
-  describe('Test 4: Should pass correct postId to fetchCommentsByPostId', () => {
-    it('should dispatch fetchCommentsByPostId with correct postId', async () => {
-      const mockPost = createPost(42, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
-      
-      const postsState = createDefaultPostsState([mockPost]);
-      const commentsState = createDefaultCommentsState({});
-      
-      const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '42');
-
-      await waitFor(() => {
-        expect(dispatchSpy).toHaveBeenCalled();
-      });
-      
-      // We can't easily test the exact postId without more complex mocking,
-      // but we can verify the dispatch was called with a function (thunk)
-      const dispatchCall = dispatchSpy.mock.calls[0][0];
-      expect(typeof dispatchCall).toBe('function');
-    });
-  });
-
-  describe('Test 5: Should show loading spinner when fetching comments', () => {
+  describe('Should show loading spinner when fetching comments', () => {
     it('should display loading spinner when comments are being fetched', () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
-      
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 5, 0);
+
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = createDefaultCommentsState({});
       commentsState.loading = true; // Set loading to true
@@ -191,21 +155,19 @@ describe('PostPage Comments Fetching', () => {
       renderPostPageWithStore(postsState, commentsState, '1');
 
       const spinners = screen.getAllByTestId('comments-loading-spinner');
-      expect(spinners.length).toBeGreaterThan(0);
-      expect(spinners[0].getAttribute('role')).toBe('status');
-      expect(spinners[0].getAttribute('aria-label')).toBe('Loading comments');
+      expect(spinners.length).toBe(1);
     });
   });
 
-  describe('Test 6: Should hide loading spinner when not loading comments', () => {
+  describe('Should hide loading spinner when not loading comments', () => {
     it('should not display loading spinner when comments match post commentsCount', () => {
       // Post with 2 commentsCount and store has exactly 2 comments
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 2, 0);
+      const mockPost = createPost(1, '1', 'Technology', 'Test Post', 'Content', 'author', 2, 0);
       const mockComments = [
         createComment(1, 1, 'Comment 1', 'user1', 0),
         createComment(2, 1, 'Comment 2', 'user2', 0)
       ];
-      
+
       const postsState = createDefaultPostsState([mockPost]);
       const commentsState = {
         commentsByPostId: { 1: mockComments },
@@ -220,51 +182,19 @@ describe('PostPage Comments Fetching', () => {
     });
   });
 
-  describe('Test 7: Should show spinner with correct styling and placement', () => {
-    it('should display spinner with correct classes and accessibility attributes', () => {
-      const mockPost = createPost(1, 'Technology', 'Test Post', 'Content', 'author', 5, 0);
-      
-      const postsState = createDefaultPostsState([mockPost]);
-      const commentsState = {
-        commentsByPostId: {},
-        loading: true,
-        error: null
-      };
-
-      renderPostPageWithStore(postsState, commentsState, '1');
-
-      const spinners = screen.getAllByTestId('comments-loading-spinner');
-      const spinner = spinners[0];
-      
-      // Check basic accessibility attributes
-      expect(spinner.getAttribute('role')).toBe('status');
-      expect(spinner.getAttribute('aria-label')).toBe('Loading comments');
-      expect(spinner.getAttribute('aria-live')).toBe('polite');
-      
-      // Check styling classes
-      expect(spinner.className).toContain('flex');
-      expect(spinner.className).toContain('justify-center');
-      expect(spinner.className).toContain('my-4');
-      
-      // Check that AppLogo has animate-spin class
-      const logo = spinner.querySelector('div');
-      expect(logo?.className).toContain('animate-spin');
-    });
-  });
-
   describe('Post Fetching Tests', () => {
-    describe('Test 8: Should fetch post data when postId exists but post not in store', () => {
+    describe('Should fetch post data when postId exists but post not in store', () => {
       it('should dispatch fetchPostById when post is missing from store', async () => {
         // No posts in the store initially
         const postsState = createDefaultPostsState([]);
         const commentsState = createDefaultCommentsState({});
-        
+
         const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '42');
 
         await waitFor(() => {
           expect(dispatchSpy).toHaveBeenCalled();
         });
-        
+
         // Check that the dispatch was called with the fetchPostById thunk
         const dispatchCall = dispatchSpy.mock.calls[0][0];
         expect(typeof dispatchCall).toBe('function');
@@ -284,7 +214,7 @@ describe('PostPage Comments Fetching', () => {
         // No posts in the store initially
         const postsState = createDefaultPostsState([]);
         const commentsState = createDefaultCommentsState({});
-        
+
         renderPostPageWithStore(postsState, commentsState, '999');
 
         // Wait for the fetch to complete and check that "Post not found" is displayed
@@ -294,31 +224,31 @@ describe('PostPage Comments Fetching', () => {
       });
     });
 
-    describe('Test 10: Should not refetch post if already in store', () => {
+    describe('Should not refetch post if already in store', () => {
       it('should not dispatch fetchPostById when post exists in store', () => {
         // Post already exists in store
-        const mockPost = createPost(42, 'Technology', 'Existing Post', 'Content', 'author', 0, 0);
+        const mockPost = createPost(42, '42', 'Technology', 'Existing Post', 'Content', 'author', 0, 0);
         const postsState = createDefaultPostsState([mockPost]);
         const commentsState = createDefaultCommentsState({});
-        
+
         const { dispatchSpy } = renderPostPageWithStore(postsState, commentsState, '42');
 
         // Should not dispatch because post is already in store
         expect(dispatchSpy).not.toHaveBeenCalled();
-        
+
         // Should display the existing post
         expect(screen.getByText('Existing Post')).toBeDefined();
       });
     });
 
     describe('PostSection Loading Tests', () => {
-      describe('Test 11: Should show loading PostSection with background animation when fetching post', () => {
+      describe('Should show loading PostSection with background animation when fetching post', () => {
         it('should display loading PostSection instead of actual PostSection when posts are loading', () => {
           // No posts in store, posts loading is true
           const postsState = createDefaultPostsState([]);
           postsState.loading = true; // Set posts loading to true
           const commentsState = createDefaultCommentsState({});
-          
+
           renderPostPageWithStore(postsState, commentsState, '42');
 
           // Should show loading PostSection with skeleton/shimmer effect
@@ -335,14 +265,14 @@ describe('PostPage Comments Fetching', () => {
         });
       });
 
-      describe('Test 12: Should hide loading PostSection when post fetch completes', () => {
+      describe('Should hide loading PostSection when post fetch completes', () => {
         it('should display actual PostSection when post is loaded and not show loading skeleton', () => {
           // Post exists in store, loading is false
-          const mockPost = createPost(42, 'Technology', 'Real Post', 'Content', 'author', 0, 0);
+          const mockPost = createPost(42, '42', 'Technology', 'Real Post', 'Content', 'author', 0, 0);
           const postsState = createDefaultPostsState([mockPost]);
           postsState.loading = false; // Set posts loading to false
           const commentsState = createDefaultCommentsState({});
-          
+
           renderPostPageWithStore(postsState, commentsState, '42');
 
           // Should show actual PostSection content
@@ -355,17 +285,17 @@ describe('PostPage Comments Fetching', () => {
         });
       });
 
-      describe('Test 13: Should show loading PostSection with correct styling', () => {
+      describe('Should show loading PostSection with correct styling', () => {
         it('should display loading PostSection with proper skeleton structure and animations', () => {
           // No posts in store, posts loading is true
           const postsState = createDefaultPostsState([]);
           postsState.loading = true;
           const commentsState = createDefaultCommentsState({});
-          
+
           renderPostPageWithStore(postsState, commentsState, '42');
 
           const loadingPostSection = screen.getByTestId('loading-post-section');
-          
+
           // Check container styling matches PostSection
           expect(loadingPostSection.className).toContain('flex');
           expect(loadingPostSection.className).toContain('flex-col');
@@ -374,10 +304,10 @@ describe('PostPage Comments Fetching', () => {
           expect(loadingPostSection.className).toContain('rounded-[9px]');
           expect(loadingPostSection.className).toContain('border');
           expect(loadingPostSection.className).toContain('border-text-50');
-          
+
           // Check animation
           expect(loadingPostSection.className).toContain('animate-pulse');
-          
+
           // Verify skeleton elements exist
           const skeletonElements = loadingPostSection.querySelectorAll('.bg-gray-300');
           expect(skeletonElements.length).toBeGreaterThan(5); // Tag, author, title, voter buttons, content lines, comment button

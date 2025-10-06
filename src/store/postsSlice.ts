@@ -1,46 +1,64 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { type Post } from '@models/Post';
-import api from '../api/mockedApi';
+import { fetchPosts, type RedditPostData } from '@api/reddit/fetchPosts';
+import api from '@api/mockedApi';
+import type { RootState } from '@store/store';
+import { SUBREDDITS } from '@config/reddit';
 
-interface PostsState {
+export interface PostsState {
     posts: Post[];
-    selectedTag: string;
+    selectedSubReddit: string;
     loading: boolean;
     error: string | null;
 }
 
 const initialState: PostsState = {
     posts: [],
-    selectedTag: "Technology",
+    selectedSubReddit: SUBREDDITS[0],
     loading: false,
     error: null,
 };
 
-export const fetchPosts = createAsyncThunk(
-    "posts/fetchPosts",
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await api.getPosts();
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to fetch posts');
-            }
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
-        }
-    }
-);
+// Transform Reddit post data to our Post model
+const transformRedditPostToPost = (redditPost: RedditPostData): Post => {
+    return {
+        id: parseInt(redditPost.id, 36), // Convert Reddit's base36 ID to number
+        redditId: redditPost.id, // Keep original Reddit ID for API calls
+        subreddit: redditPost.subreddit,
+        title: redditPost.title,
+        content: redditPost.selftext || redditPost.url || '',
+        author: redditPost.author,
+        commentsCount: redditPost.num_comments,
+        initialVoteCount: redditPost.score
+    };
+};
 
-export const fetchPostsByTag = createAsyncThunk(
-    "posts/fetchPostsByTag",
-    async (tag: string, { rejectWithValue }) => {
+export const fetchPostsBySubReddit = createAsyncThunk(
+    "posts/fetchPostsBySubReddit",
+    async (subreddit: string, {getState, rejectWithValue }) => {
         try {
-            const response = await api.getPostsByTag(tag);
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to fetch posts');
+            const state = getState() as RootState;
+            
+            const accessToken = state.auth.accessToken;
+            const userInfo = state.auth.userInfo;
+            if (!accessToken) {
+                throw new Error("No access token.");
             }
-            return response.data;
+            
+            if (!userInfo) {
+                throw new Error("No user info.");
+            }
+
+            // fetchPosts returns RedditResponse directly
+            const redditResponse = await fetchPosts(subreddit, accessToken, userInfo);
+            
+            // Transform Reddit posts to our Post model
+            const transformedPosts = redditResponse.data.children.map(child => 
+                transformRedditPostToPost(child.data)
+            );
+
+            return transformedPosts; 
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
         }
@@ -66,8 +84,8 @@ const postsSlice = createSlice({
     name: 'posts',
     initialState,
     reducers: {
-        setSelectedTag: (state, action: PayloadAction<string>) => {
-            state.selectedTag = action.payload;
+        setSelectedSubReddit: (state, action: PayloadAction<string>) => {
+            state.selectedSubReddit = action.payload;
         },
         addPost: (state, action: PayloadAction<Post>) => {
             state.posts = [...state.posts, action.payload]
@@ -84,35 +102,19 @@ const postsSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // fetchPosts
-            .addCase(fetchPosts.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchPosts.fulfilled, (state, action) => {
-                state.loading = false;
-                // Add new posts that don't already exist
-                const existingIds = new Set(state.posts.map(post => post.id));
-                const newPosts = action.payload.filter(post => !existingIds.has(post.id));
-                state.posts.push(...newPosts);
-            })
-            .addCase(fetchPosts.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload as string;
-            })
             // fetchPostsByTag
-            .addCase(fetchPostsByTag.pending, (state) => {
+            .addCase(fetchPostsBySubReddit.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchPostsByTag.fulfilled, (state, action) => {
+            .addCase(fetchPostsBySubReddit.fulfilled, (state, action) => {
                 state.loading = false;
                 // Add new posts that don't already exist
                 const existingIds = new Set(state.posts.map(post => post.id));
-                const newPosts = action.payload.filter(post => !existingIds.has(post.id));
+                const newPosts = action.payload.filter((post: Post) => !existingIds.has(post.id));
                 state.posts.push(...newPosts);
             })
-            .addCase(fetchPostsByTag.rejected, (state, action) => {
+            .addCase(fetchPostsBySubReddit.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             })
@@ -137,7 +139,7 @@ const postsSlice = createSlice({
 });
 
 export const {
-    setSelectedTag,
+    setSelectedSubReddit,
     addPost,
     deletePost,
     setLoading,

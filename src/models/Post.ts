@@ -1,6 +1,7 @@
 export interface Post {
     id: number;
-    tag: string;
+    redditId: string; // Original Reddit post ID (base36)
+    subreddit: string;
     title: string;
     content: string;
     author: string;
@@ -10,7 +11,8 @@ export interface Post {
 
 export const createPost = (
     id: number,
-    tag: string,
+    redditId: string,
+    subreddit: string,
     title: string,
     content: string,
     author: string,
@@ -18,7 +20,8 @@ export const createPost = (
     initialVoteCount: number
 ): Post => ({
     id,
-    tag,
+    redditId,
+    subreddit,
     title,
     content,
     author,

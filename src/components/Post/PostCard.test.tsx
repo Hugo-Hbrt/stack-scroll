@@ -48,7 +48,8 @@ import type { Post } from "@models/Post";
 
 const defaultPost: Post = {
     id: 1,
-    tag: "React",
+    redditId: "1",
+    subreddit: "React",
     title: "Test Title",
     content: "Test content for the post.",
     author: "John Doe",
@@ -97,7 +98,7 @@ describe("Post", () => {
     }
 
     const hasAllElements = () => {
-        expect(screen.getByTestId("post-tag")).toHaveTextContent(defaultPost.tag);
+        expect(screen.getByTestId("post-tag")).toHaveTextContent(defaultPost.subreddit);
         expect(screen.getByText(`by u\\${defaultPost.author}`)).toBeInTheDocument();
         expect(screen.getByText(defaultPost.title)).toBeInTheDocument();
         expect(screen.getByTestId("comments-icon")).toBeInTheDocument();

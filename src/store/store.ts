@@ -1,16 +1,28 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import postsReducer from './postsSlice';
 import commentsReducer from './commentsSlice';
+import authReducer from './authSlice';
 import logger from './middleware/logger';
 
-export const store = configureStore({
-    reducer: {
-        posts: postsReducer,
-        comments: commentsReducer,
-    },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(logger),
+// Create the root reducer independently to obtain the RootState type
+const rootReducer = combineReducers({
+    posts: postsReducer,
+    comments: commentsReducer,
+    auth: authReducer
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export function setupStore(preloadedState?: Partial<RootState>, enableLogger: boolean = true) {
+        
+    return configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) => {
+        const middleware = getDefaultMiddleware();
+        return enableLogger ? middleware.concat(logger) : middleware;
+    },
+    preloadedState
+  });
+}
+
+export type RootState = ReturnType<typeof rootReducer>;
+export type AppStore = ReturnType<typeof setupStore>;
+export type AppDispatch = AppStore["dispatch"];

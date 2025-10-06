@@ -1,371 +1,421 @@
-/**
- * @vitest-environment jsdom
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import FeedPage from './FeedPage';
-import postsReducer from '../store/postsSlice';
-import commentsReducer from '../store/commentsSlice';
-import { createPost } from '@models/Post';
+import {
+  vi,
+  describe,
+  it,
+  expect,
+  afterEach,
+  beforeEach,
+  assert,
+} from "vitest";
+import { setupStore } from "@store/store";
+import "@testing-library/jest-dom/vitest";
+import { createStoreState, renderWithProviders } from "@test/test.utils.tsx";
+import { screen, waitFor } from "@testing-library/dom";
+import FeedPage from "./FeedPage";
+import { SUBREDDITS } from "@config/reddit";
+import { cleanup, fireEvent } from "@testing-library/react";
+import * as postsSlice from "@store/postsSlice";
+import type { Post } from "@models/Post";
+import { generateMultiplePosts } from "@models/PostHelper";
+import { act } from "@testing-library/react";
 
-// Mock the API
-vi.mock('../api/mockedApi', () => ({
-  default: {
-    getPostsByTag: vi.fn(),
-    getPosts: vi.fn()
-  }
+enum TEST_ID {
+  TagSelector = "tag-selector",
+  PostCard = "post-card",
+  LoadingSpinner = "loading-spinner",
+  PostSubreddit = "post-subreddit",
+  PostTitle = "post-title",
+}
+
+/* MOCKS */
+vi.mock("@components/Post/PostCard", () => ({
+  default: ({ post }: { post: Post }) => (
+    <div data-testid={TEST_ID.PostCard}>
+      <h1 data-testid={TEST_ID.PostTitle}>{post.title}</h1>
+      <div data-testid={TEST_ID.PostSubreddit}>{post.subreddit}</div>
+    </div>
+  ),
 }));
 
-// Mock React Router
-vi.mock('react-router', () => ({
-  useNavigate: () => vi.fn(),
-  useLocation: () => ({ pathname: '/feed' }),
-  useParams: () => ({}),
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-    <a href={to}>{children}</a>
-  )
+vi.mock("@components/TagSelector/TagSelector", () => ({
+  default: ({
+    text,
+    selected,
+    onClick,
+  }: {
+    text: string;
+    selected: boolean;
+    onClick: () => void;
+  }) => (
+    <div data-testid={TEST_ID.TagSelector} onClick={onClick}>
+      {text}-{selected ? "selected" : ""}
+    </div>
+  ),
 }));
 
-const createTestStore = (postsState: any, commentsState: any) => {
-  return configureStore({
-    reducer: {
-      posts: postsReducer,
-      comments: commentsReducer
-    },
-    preloadedState: {
-      posts: postsState,
-      comments: commentsState
-    }
-  });
-};
+vi.mock("@components/LoadingSpinner/LoadingSpinner", () => ({
+  default: () => <div data-testid={TEST_ID.LoadingSpinner}></div>,
+}));
 
-const createDefaultCommentsState = () => ({
-  commentsByPostId: {},
-  loading: false,
-  error: null
+vi.mock("@config/reddit", async () => {
+  const actual = await vi.importActual("@config/reddit");
+  return {
+    ...actual,
+    SUBREDDITS: ["subreddit1", "subreddit2", "subreddit3", "subreddit4"],
+  };
 });
 
-const renderFeedPageWithStore = (postsState: any) => {
-  const store = createTestStore(postsState, createDefaultCommentsState());
+/* This mock is useful to avoid requests from reddit API */
+vi.mock("@api/reddit/fetchPosts", () => ({
+  fetchPosts: vi.fn(() => Promise.resolve({ data: { children: [] } })),
+}));
 
-  const dispatchSpy = vi.spyOn(store, 'dispatch');
+const testStore = setupStore({}, false);
+const dispatchSpy = vi.spyOn(testStore, "dispatch");
+const fetchPostsBySubRedditSpy = vi.spyOn(postsSlice, "fetchPostsBySubReddit");
+const setSelectedSubRedditSpy = vi.spyOn(postsSlice, "setSelectedSubReddit");
 
-  const renderResult = render(
-    <Provider store={store}>
-      <FeedPage />
-    </Provider>
-  );
-
-  return { store, dispatchSpy, ...renderResult };
-};
-
-const createPostsState = (posts: any[] = [], selectedTag = 'Technology', loading = false, error = null) => ({
-  posts,
-  selectedTag,
-  loading,
-  error
-});
-
-describe('FeedPage Retry Behavior', () => {
+describe("FeedPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
-  describe('Test 1: Should fetch posts when feedPosts.length < MIN_POSTS', () => {
-    it('should dispatch fetchPostsByTag when no posts exist for selected tag', async () => {
-      const postsState = createPostsState([]);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // Should dispatch fetchPostsByTag because no posts exist
-      expect(dispatchSpy).toHaveBeenCalled();
-      // Simply check that dispatch was called - the function is the thunk
-      const dispatchCall = dispatchSpy.mock.calls[0][0];
-      expect(typeof dispatchCall).toBe('function');
-    });
-
-    it('should not fetch when enough posts exist', async () => {
-      const mockPosts = [
-        createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)
-      ];
-      
-      const postsState = createPostsState(mockPosts);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // Should not dispatch fetchPostsByTag because we have enough posts
-      expect(dispatchSpy).not.toHaveBeenCalled();
-    });
+  afterEach(() => {
+    cleanup();
+    expect(document.body.innerHTML).toBe("");
   });
 
-  describe('Test 2: Should not fetch if already loading', () => {
-    it('should not dispatch fetchPostsByTag when loading is true', async () => {
-      const postsState = createPostsState([], 'Technology', true);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // Should not dispatch because already loading
-      expect(dispatchSpy).not.toHaveBeenCalled();
+  describe("Initial rendering", () => {
+    it("should mount without errors", async () => {
+      renderWithProviders(<FeedPage />, { store: testStore });
     });
 
-    it('should not dispatch when loading is true even with no posts', async () => {
-      const postsState = createPostsState([], 'Technology', true);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // Should not dispatch even though no posts exist because already loading
-      expect(dispatchSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Test 3: Should retry once if first fetch returns 0 posts', () => {
-    it('should dispatch fetchPostsByTag again after first fetch returns 0 posts', async () => {
-      // Mock API to return empty array
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag).mockResolvedValueOnce({
-        success: true,
-        data: []
-      });
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // First dispatch should happen
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-
-      // Wait for the async operation to complete and then check for retry
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Should dispatch again for retry
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-    });
-
-    it('should not retry if first fetch returns some posts', async () => {
-      // Mock API to return posts
-      const mockedApi = await import('../api/mockedApi');
-      const mockPosts = [createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
-      vi.mocked(mockedApi.default.getPostsByTag).mockResolvedValueOnce({
-        success: true,
-        data: mockPosts
-      });
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // First dispatch should happen
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-
-      // Wait for the async operation to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should not retry because we got posts
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('Test 4: Should not retry more than once', () => {
-    it('should not dispatch a third time after two failed fetches', async () => {
-      // Mock API to return empty array for both calls
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag)
-        .mockResolvedValueOnce({ success: true, data: [] })  // First fetch returns 0 posts
-        .mockResolvedValueOnce({ success: true, data: [] }); // Retry returns 0 posts
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // First dispatch should happen
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-
-      // Wait for first fetch to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should dispatch again for retry
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-
-      // Wait for retry to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should NOT dispatch a third time
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-    });
-
-    it('should respect retry limit even if posts are still needed', async () => {
-      // Mock API to always return empty array
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag).mockResolvedValue({
-        success: true,
-        data: []
-      });
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // First dispatch
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-
-      // Wait for operations to complete
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Should have made exactly 2 calls (initial + 1 retry)
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('Test 5: Should stop fetching after 1 failed retry', () => {
-    it('should stop fetching when retry fails with error', async () => {
-      // Mock API to fail on both calls
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag)
-        .mockRejectedValueOnce(new Error('Network error'))  // First fetch fails
-        .mockRejectedValueOnce(new Error('Network error')); // Retry fails
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // First dispatch should happen
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-
-      // Wait for first fetch to fail
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should dispatch again for retry
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-
-      // Wait for retry to fail
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Should NOT dispatch a third time after failed retry
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-    });
-
-    it('should stop fetching when retry succeeds but returns 0 posts', async () => {
-      // Mock API: first fails, retry succeeds but returns empty
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag)
-        .mockRejectedValueOnce(new Error('Network error'))  // First fetch fails
-        .mockResolvedValueOnce({ success: true, data: [] }); // Retry succeeds with 0 posts
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // First dispatch should happen
-      expect(dispatchSpy).toHaveBeenCalledTimes(1);
-
-      // Wait for operations to complete
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Should have made exactly 2 calls and stop
-      expect(dispatchSpy).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('Test 6: Should reset retry state when tag changes', () => {
-    it('should allow fresh retries when switching to a different tag', async () => {
-      // Mock API to return empty array for both tags
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag).mockResolvedValue({
-        success: true,
-        data: []
-      });
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { store, dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // Should make 2 calls for 'Technology' tag (initial + retry)
-      await new Promise(resolve => setTimeout(resolve, 200));
-      const callsAfterTechnology = dispatchSpy.mock.calls.length;
-      expect(callsAfterTechnology).toBe(2);
-
-      // Switch to 'Travel' tag - this resets retry count
-      store.dispatch({ type: 'posts/setSelectedTag', payload: 'Travel' });
-
-      // Wait for tag change to process and new fetches
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      const totalCalls = dispatchSpy.mock.calls.length;
-      // Should have made fresh retries for Travel tag (exactly 3 more due to reset behavior)
-      expect(totalCalls).toBe(callsAfterTechnology + 3);
-    });
-
-    it('should reset retry count to 0 when tag changes', async () => {
-      // Mock API to exhaust retries for first tag, then succeed for second tag
-      const mockedApi = await import('../api/mockedApi');
-      vi.mocked(mockedApi.default.getPostsByTag)
-        .mockResolvedValueOnce({ success: true, data: [] })  // Technology: first call
-        .mockResolvedValueOnce({ success: true, data: [] })  // Technology: retry
-        .mockResolvedValueOnce({ success: true, data: [createPost(1, 'Travel', 'Test', 'Content', 'author', 0, 10)] }); // Travel: first call
-
-      const postsState = createPostsState([], 'Technology', false);
-      const { store, dispatchSpy } = renderFeedPageWithStore(postsState);
-
-      // Wait for Technology tag retries to complete (2 calls)
-      await new Promise(resolve => setTimeout(resolve, 200));
-      const callsAfterTechnology = dispatchSpy.mock.calls.length;
-      expect(callsAfterTechnology).toBe(2);
-
-      // Switch to Travel tag - this should reset retry count
-      store.dispatch({ type: 'posts/setSelectedTag', payload: 'Travel' });
-
-      // Wait for Travel tag fetch
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const totalCalls = dispatchSpy.mock.calls.length;
-      // Should have made 2 more calls for Travel (retry count was reset, 1 initial + 1 success)
-      expect(totalCalls).toBe(callsAfterTechnology + 2);
-    });
-  });
-
-  describe('Loading Spinner Tests', () => {
-    describe('Test 1: Should show spinner when loading is true', () => {
-      it('should display spinning AppLogo when loading state is true', () => {
-        const postsState = createPostsState([], 'Technology', true);
-        renderFeedPageWithStore(postsState);
-
-        const loadingSpinners = screen.getAllByTestId('loading-spinner');
-        expect(loadingSpinners.length).toBeGreaterThan(0);
-        
-        const spinner = loadingSpinners[0];
-        const spinningLogo = spinner.querySelector('.animate-spin');
-        
-        expect(spinner).toBeTruthy();
-        expect(spinningLogo).toBeTruthy();
+    it("should display all tags from SUBREDDITS constant", () => {
+      renderWithProviders(<FeedPage />, { store: testStore });
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+      expect(tags.length).toEqual(SUBREDDITS.length);
+      SUBREDDITS.forEach((subreddit, index) => {
+        expect(tags[index]).toHaveTextContent(subreddit);
       });
     });
 
-    describe('Test 2: Should hide spinner when loading is false', () => {
-      it('should not display spinner when loading state is false', () => {
-        // Create state with posts so fetch doesn't trigger and set loading to true
-        const mockPosts = [createPost(1, 'Technology', 'Test Post', 'Content', 'author', 0, 10)];
-        const postsState = createPostsState(mockPosts, 'Technology', false);
-        const { container } = renderFeedPageWithStore(postsState);
+    it("should trigger fetchPostsBySubReddit on mount with initial selectedSubReddit", async () => {
+      renderWithProviders(<FeedPage />, { store: testStore });
 
-        // Should not show spinner when not loading
-        const loadingSpinner = container.querySelector('[data-testid="loading-spinner"]');
-        expect(loadingSpinner).toBeFalsy();
+      // Expect one and good dispatch.
+      expect(dispatchSpy.mock.calls.length).toEqual(1);
+      expect(fetchPostsBySubRedditSpy.mock.calls.length).toEqual(1);
+
+      // Expect the action to have been called with right argument
+      const initialSubreddit = testStore.getState().posts.selectedSubReddit;
+      const [lastCallArg] = fetchPostsBySubRedditSpy.mock.lastCall ?? [0];
+      expect(lastCallArg).toEqual(initialSubreddit);
+    });
+
+    it("should mark the correct tag as selected based on selectedSubReddit from store", () => {
+      renderWithProviders(<FeedPage />, { store: testStore });
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+      const selected = tags.filter((el) => el.innerHTML.includes("selected"));
+
+      const initialSubreddit = testStore.getState().posts.selectedSubReddit;
+
+      assert(selected.length === 1, "Not only one selected tags");
+      assert(
+        selected[0].innerHTML.includes(initialSubreddit),
+        "Selected tag is not the one in the store"
+      );
+    });
+  });
+
+  describe("Post filtering", () => {
+    const mockPosts = generateMultiplePosts(SUBREDDITS, 50);
+    const selectedSubreddit = SUBREDDITS[0];
+    const storeState = createStoreState(
+      {
+        posts: mockPosts,
+        loading: false,
+        selectedSubReddit: selectedSubreddit,
+      },
+      {
+        isAuthenticated: true,
+      }
+    );
+
+    it("should only display posts whose subreddit matches selectedSubReddit", () => {
+      renderWithProviders(<FeedPage />, {
+        preloadedState: storeState,
+      });
+      const displayedPosts = screen.getAllByTestId(TEST_ID.PostSubreddit);
+      expect(
+        displayedPosts.every((post) => post.innerHTML === selectedSubreddit)
+      ).to.be.true;
+    });
+
+    it("should limit display to MAX_NUMBER_OF_SHOWN_POSTS (maximum 10 posts)", () => {
+      // Generate a list of 20 posts for subreddit.
+      const mockPosts = generateMultiplePosts([selectedSubreddit], 20);
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: mockPosts,
+            loading: false,
+            selectedSubReddit: selectedSubreddit,
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+      const displayedPosts = screen.getAllByTestId(TEST_ID.PostCard);
+      expect(displayedPosts.length).toEqual(10);
+    });
+
+    it("should update feedPosts when allPosts changes, when new post are fetched", () => {
+      const mockPosts = generateMultiplePosts([selectedSubreddit], 12);
+      const initialPosts = mockPosts.slice(0, 9);
+      const newPosts = mockPosts.slice(9);
+
+      const storeState = createStoreState(
+        {
+          posts: initialPosts,
+          loading: false,
+          selectedSubReddit: selectedSubreddit,
+        },
+        {
+          isAuthenticated: true,
+        }
+      );
+
+      const { store } = renderWithProviders(<FeedPage />, {
+        preloadedState: storeState,
+      });
+
+      const postsBeforeUpdate = screen.getAllByTestId(TEST_ID.PostCard);
+
+      // We call store dispatch inside an act wrapper to ensure component will be fully updated
+      // at the end.
+      act(() => {
+        newPosts.forEach((post: Post) =>
+          store.dispatch(postsSlice.addPost(post))
+        );
+      });
+
+      const postsAfterUpdate = screen.getAllByTestId(TEST_ID.PostCard);
+      expect(postsBeforeUpdate).not.toEqual(postsAfterUpdate);
+    });
+
+    it("should update feedPosts when selectedSubReddit changes", () => {
+      const { store } = renderWithProviders(<FeedPage />, {
+        preloadedState: storeState,
+      });
+
+      const postsBeforeUpdate = screen.getAllByTestId(TEST_ID.PostCard);
+
+      // We call store dispatch inside an act wrapper to ensure component will be fully updated
+      // at the end.
+      const newSelectedSubreddit = SUBREDDITS[1];
+      act(() => {
+        store.dispatch(postsSlice.setSelectedSubReddit(newSelectedSubreddit));
+      });
+
+      const postsAfterUpdate = screen.getAllByTestId(TEST_ID.PostCard);
+      expect(postsBeforeUpdate).not.toEqual(postsAfterUpdate);
+    });
+  });
+
+  describe("Tag selection", () => {
+    it("should dispatch setSelectedSubReddit with new tag when tag is clicked", () => {
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: [],
+            loading: false,
+            selectedSubReddit: SUBREDDITS[0],
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+
+      vi.clearAllMocks();
+
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+      const newTagIndex = 1;
+
+      fireEvent.click(tags[newTagIndex]);
+
+      expect(setSelectedSubRedditSpy).toHaveBeenCalledWith(
+        SUBREDDITS[newTagIndex]
+      );
+    });
+
+    it("should not dispatch setSelectedSubReddit if same tag is clicked", () => {
+      const selectedSubreddit = SUBREDDITS[0];
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: [],
+            loading: false,
+            selectedSubReddit: selectedSubreddit,
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+
+      vi.clearAllMocks();
+
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+
+      fireEvent.click(tags[0]);
+
+      expect(setSelectedSubRedditSpy).not.toHaveBeenCalled();
+    });
+
+    it("should pass selected=true to selected tag", () => {
+      const selectedSubreddit = SUBREDDITS[2];
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: [],
+            loading: false,
+            selectedSubReddit: selectedSubreddit,
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+      const selectedTag = tags.find((tag) =>
+        tag.innerHTML.includes(selectedSubreddit)
+      );
+
+      expect(selectedTag).toBeDefined();
+      expect(selectedTag?.innerHTML).toContain("selected");
+    });
+
+    it("should pass selected=false to non-selected tags", () => {
+      const selectedSubreddit = SUBREDDITS[0];
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: [],
+            loading: false,
+            selectedSubReddit: selectedSubreddit,
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+      const nonSelectedTags = tags.filter(
+        (tag) => !tag.innerHTML.includes(selectedSubreddit)
+      );
+
+      nonSelectedTags.forEach((tag) => {
+        expect(tag.innerHTML).not.toContain("selected");
       });
     });
 
-    describe('Test 3: Should show spinner with correct props/styling', () => {
-      it('should render AppLogo with medium size and proper container styling', () => {
-        const postsState = createPostsState([], 'Technology', true);
-        const { container } = renderFeedPageWithStore(postsState);
-
-        const loadingSpinner = container.querySelector('[data-testid="loading-spinner"]');
-        expect(loadingSpinner).toBeTruthy();
-
-        // Check container has proper centering classes
-        expect(loadingSpinner?.classList.contains('flex')).toBe(true);
-        expect(loadingSpinner?.classList.contains('justify-center')).toBe(true);
-        expect(loadingSpinner?.classList.contains('my-4')).toBe(true);
-
-        // Check AppLogo has animate-spin class  
-        const appLogo = loadingSpinner?.querySelector('.animate-spin');
-        expect(appLogo).toBeTruthy();
-
-        // Check SVG has medium size (32x32)
-        const svg = appLogo?.querySelector('svg');
-        expect(svg?.getAttribute('width')).toBe('32');
-        expect(svg?.getAttribute('height')).toBe('32');
+    it("should call handleTagSelection with correct subreddit when TagSelector onClick is triggered", () => {
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: [],
+            loading: false,
+            selectedSubReddit: SUBREDDITS[0],
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
       });
+
+      vi.clearAllMocks();
+
+      const tags = screen.getAllByTestId(TEST_ID.TagSelector);
+      const targetTagIndex = 2;
+
+      fireEvent.click(tags[targetTagIndex]);
+
+      expect(setSelectedSubRedditSpy).toHaveBeenCalledWith(
+        SUBREDDITS[targetTagIndex]
+      );
+      expect(setSelectedSubRedditSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Loading states", () => {
+    it("should display LoadingSpinner when loading is true", () => {
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: [],
+            loading: true,
+            selectedSubReddit: SUBREDDITS[0],
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+
+      const spinner = screen.getByTestId(TEST_ID.LoadingSpinner);
+      expect(spinner).toBeInTheDocument();
+    });
+
+    it("should not display LoadingSpinner when loading is false and there is enough posts", async () => {
+      const mockPosts = generateMultiplePosts(SUBREDDITS, 50);
+      const selectedSubreddit = SUBREDDITS[0];
+      const storeState = createStoreState(
+        {
+          posts: mockPosts,
+          loading: false,
+          selectedSubReddit: selectedSubreddit,
+        },
+        {
+          isAuthenticated: true,
+        }
+      );
+
+      const { store } = renderWithProviders(<FeedPage />, {
+        preloadedState: storeState,
+      });
+
+      await waitFor(() => {
+        expect(store.getState().posts.loading).toBe(false);
+      });
+
+      const spinner = screen.queryByTestId(TEST_ID.LoadingSpinner);
+      expect(spinner).not.toBeInTheDocument();
+    });
+
+    it("should display posts while loading", () => {
+      const mockPosts = generateMultiplePosts([SUBREDDITS[0]], 5);
+      renderWithProviders(<FeedPage />, {
+        preloadedState: createStoreState(
+          {
+            posts: mockPosts,
+            loading: true,
+            selectedSubReddit: SUBREDDITS[0],
+          },
+          {
+            isAuthenticated: true,
+          }
+        ),
+      });
+
+      const spinner = screen.getByTestId(TEST_ID.LoadingSpinner);
+      expect(spinner).toBeInTheDocument();
+
+      const posts = screen.queryAllByTestId(TEST_ID.PostCard);
+      expect(posts.length).toBe(5);
     });
   });
 });
